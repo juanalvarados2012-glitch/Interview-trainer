@@ -125,11 +125,11 @@ function useTTS() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = "es-ES";
+    utt.lang = "en-US";
     utt.rate = 0.92;
     const voices = window.speechSynthesis.getVoices();
-    const esVoice = voices.find(v => v.lang.startsWith("es"));
-    if (esVoice) utt.voice = esVoice;
+    const enVoice = voices.find(v => v.lang.startsWith("en"));
+    if (enVoice) utt.voice = enVoice;
     utt.onstart = () => setSpeaking(true);
     utt.onend = () => setSpeaking(false);
     utt.onerror = () => setSpeaking(false);
@@ -154,7 +154,7 @@ function useSTT() {
     setSupported(!!SR);
     if (!SR) return;
     const rec = new SR();
-    rec.lang = "es-ES";
+    rec.lang = "en-US";
     rec.continuous = true;
     rec.interimResults = true;
     rec.onresult = (e) => {
@@ -181,9 +181,9 @@ function useSTT() {
 
 /* ── CONSTANTS ───────────────────────────────────────────────── */
 const EXAMPLES = [
-  { role: "Diseñador UX/UI", company: "Startup de tecnología", jd: "Buscamos diseñador UX/UI con experiencia en Figma, investigación de usuarios, prototipado rápido y trabajo en equipos ágiles. Valoramos pensamiento sistémico y pasión por la usabilidad." },
-  { role: "Asistente Administrativo", company: "Empresa de consultoría", jd: "Asistente administrativo para gestión de agendas, coordinación de reuniones, manejo de documentación, atención a clientes internos y soporte al equipo directivo." },
-  { role: "Community Manager", company: "Agencia de marketing", jd: "Community manager con experiencia en redes sociales, creación de contenido, análisis de métricas, gestión de comunidades y campañas digitales para marcas de consumo." },
+  { role: "UX/UI Designer", company: "Tech Startup", jd: "We are looking for a UX/UI Designer with experience in Figma, user research, rapid prototyping, and agile team collaboration. Systems thinking and a passion for usability are highly valued." },
+  { role: "Executive Assistant", company: "Consulting Firm", jd: "Executive assistant responsible for calendar management, meeting coordination, document handling, internal client support, and assistance to senior leadership." },
+  { role: "Marketing Manager", company: "Digital Agency", jd: "Marketing manager with experience in social media strategy, content creation, metrics analysis, community management, and digital campaigns for consumer brands." },
 ];
 
 const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
@@ -223,21 +223,21 @@ export default function App() {
   }, [displayMessages, aiThinking]);
 
   const buildSystem = useCallback(() =>
-    `Eres un entrevistador senior de RRHH para el puesto de "${jobRole}" en ${company || "nuestra empresa"}. Conduces entrevistas REALES y exigentes.
-Descripción del puesto: ${jdText}
+    `You are a senior HR interviewer for the "${jobRole}" role at ${company || "our company"}. You conduct REAL, demanding interviews.
+Job description: ${jdText}
 
-REGLAS DE COMPORTAMIENTO:
-1. Al recibir [INICIAR]: preséntate en 1 oración y haz tu primera pregunta específica al puesto.
-2. Evalúa CADA respuesta antes de continuar:
-   - Si la respuesta es vaga, muy corta (menos de 2-3 oraciones), o no responde la pregunta: NO pases a la siguiente. Pide que elabore con ejemplos concretos. Ejemplo: "Entiendo, pero ¿puedes darme un ejemplo específico de cuándo hiciste eso?"
-   - Si el candidato dice solo "sí", "no", "claro", o frases de una palabra: exige más. Ejemplo: "Necesito que me cuentes con más detalle. ¿Qué hiciste exactamente?"
-   - Si la respuesta es evasiva o genérica: señálalo y repregunta. Ejemplo: "Eso suena muy general. ¿Qué hiciste TÚ específicamente en esa situación?"
-   - Solo avanza a la siguiente pregunta cuando la respuesta sea suficientemente completa y concreta.
-3. Puedes hacer hasta 2 preguntas de seguimiento por pregunta principal antes de avanzar.
-4. Cuenta solo las ${numQ} preguntas PRINCIPALES (no los follow-ups).
-5. NO digas "excelente", "genial", "perfecto" ni valides respuestas malas. Usa frases neutras como "Entiendo", "De acuerdo", "Cuéntame más".
-6. Cuando el candidato responda la pregunta principal #${numQ} de forma aceptable: cierra la entrevista con amabilidad e incluye exactamente "|||FIN|||" al final.
-7. Habla siempre en español. Máx 3 oraciones por turno. Sé directo y profesional, no condescendiente.`,
+BEHAVIOR RULES:
+1. When you receive [START]: introduce yourself in 1 sentence and ask your first specific question for this role.
+2. Evaluate EVERY answer before moving on:
+   - If the answer is vague, too short (less than 2-3 sentences), or doesn't address the question: do NOT move on. Ask for concrete examples. E.g. "I understand, but can you give me a specific example of when you did that?"
+   - If the candidate says only "yes", "no", "sure", or one-word phrases: demand more. E.g. "I need more detail. What exactly did you do?"
+   - If the answer is evasive or generic: point it out and re-ask. E.g. "That sounds very general. What did YOU specifically do in that situation?"
+   - Only move to the next question when the answer is sufficiently complete and concrete.
+3. You may ask up to 2 follow-up questions per main question before moving on.
+4. Count only the ${numQ} MAIN questions (not follow-ups).
+5. Do NOT say "great", "excellent", "perfect" or validate poor answers. Use neutral phrases like "I see", "Understood", "Tell me more about that".
+6. When the candidate has answered main question #${numQ} acceptably: close the interview politely and include exactly "|||FIN|||" at the very end.
+7. Always speak in English. Max 3 sentences per turn. Be direct and professional, not condescending.`,
     [jobRole, company, jdText, numQ]
   );
 
@@ -253,7 +253,7 @@ REGLAS DE COMPORTAMIENTO:
         body: JSON.stringify({ url: jobUrl.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error desconocido");
+      if (!res.ok) throw new Error(data.error || "Unknown error");
       if (data.role) setJobRole(data.role);
       if (data.company) setCompany(data.company);
       if (data.description) setJdText(data.description);
@@ -267,7 +267,7 @@ REGLAS DE COMPORTAMIENTO:
   const startInterview = async () => {
     setStartLoading(true);
     setStartErr("");
-    const trigger = [{ role: "user", content: "[INICIAR]" }];
+    const trigger = [{ role: "user", content: "[START]" }];
     try {
       const text = await callAI(buildSystem(), trigger);
       setApiMessages([...trigger, { role: "assistant", content: text }]);
@@ -275,7 +275,7 @@ REGLAS DE COMPORTAMIENTO:
       setPhase("interview");
       speak(text);
     } catch (e) {
-      setStartErr("Error al iniciar: " + e.message);
+      setStartErr("Error starting interview: " + e.message);
     }
     setStartLoading(false);
   };
@@ -308,7 +308,7 @@ REGLAS DE COMPORTAMIENTO:
         setTimeout(() => finishInterview([...newApi, aiMsg]), 2500);
       }
     } catch (e) {
-      setInterviewErr("Error: " + e.message + ". Intenta de nuevo.");
+      setInterviewErr("Error: " + e.message + ". Please try again.");
     }
     setAiThinking(false);
   };
@@ -319,20 +319,20 @@ REGLAS DE COMPORTAMIENTO:
     setEvalLoading(true);
 
     const transcript = history
-      .filter(m => m.content !== "[INICIAR]")
-      .map(m => `${m.role === "assistant" ? "Entrevistador" : "Candidato"}: ${m.content}`)
+      .filter(m => m.content !== "[START]")
+      .map(m => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
       .join("\n\n");
 
     const evalSystem =
-      `Eres un evaluador de entrevistas ESTRICTO y HONESTO para el puesto de "${jobRole}".
-Analiza la calidad REAL de las respuestas del candidato. Sé crítico:
-- Respuestas vagas, cortas o sin ejemplos concretos = puntaje bajo (20-40)
-- Respuestas aceptables pero genéricas = puntaje medio (40-65)
-- Respuestas con ejemplos reales, métricas y estructura = puntaje alto (65-85)
-- Respuestas excepcionales, método STAR completo, muy específicas = 85-100
-NO infles el puntaje. Si las respuestas fueron malas, dilo claramente.
-Responde ÚNICAMENTE con JSON válido sin texto extra:
-{"puntaje":45,"nivel":"Necesitas más preparación","fortalezas":["punto concreto1"],"mejoras":["punto concreto1","punto concreto2","punto concreto3"],"recomendacion":"consejo directo y honesto en 1-2 oraciones"}`;
+      `You are a STRICT and HONEST interview evaluator for the "${jobRole}" role.
+Analyze the REAL quality of the candidate's answers. Be critical:
+- Vague, short answers with no concrete examples = low score (20-40)
+- Acceptable but generic answers = mid score (40-65)
+- Answers with real examples, metrics, and structure = high score (65-85)
+- Exceptional answers, full STAR method, highly specific = 85-100
+Do NOT inflate the score. If the answers were poor, say so clearly.
+Respond ONLY with valid JSON, no extra text:
+{"puntaje":45,"nivel":"Needs more preparation","fortalezas":["specific strength 1"],"mejoras":["specific area 1","specific area 2","specific area 3"],"recomendacion":"direct and honest advice in 1-2 sentences"}`;
 
     try {
       const raw = await callAI(evalSystem, [{ role: "user", content: transcript }], 600);
@@ -369,13 +369,13 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
       <style>{css}</style>
       <div className="shell">
         <div className="hd">
-          <div className="hd-tag">// AI Interview Trainer · con voz</div>
-          <div className="hd-title">Practica para el trabajo que quieres</div>
-          <div className="hd-sub">Conversación real con un entrevistador de IA</div>
+          <div className="hd-tag">// AI Interview Trainer · with voice</div>
+          <div className="hd-title">Practice for the job you want</div>
+          <div className="hd-sub">Real conversation with an AI interviewer</div>
         </div>
 
         <div className="steps">
-          {[["Tu trabajo", 1], ["Entrevista", 2], ["Resultados", 3]].map(([lbl, n], i) => (
+          {[["Your job", 1], ["Interview", 2], ["Results", 3]].map(([lbl, n], i) => (
             <div key={n} className={`step-btn${i < pi ? " done" : i === pi ? " active" : ""}`}>
               <div className="step-num">{i < pi ? "✓" : n}</div>
               {lbl}
@@ -386,8 +386,8 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
         {/* ── SETUP ── */}
         {phase === "setup" && (
           <div className="card" key="setup">
-            <div className="card-title">¿A qué trabajo quieres aplicar?</div>
-            <div className="card-desc">Pega el link del anuncio y lo analizamos automáticamente, o llena los campos manualmente.</div>
+            <div className="card-title">What job are you applying for?</div>
+            <div className="card-desc">Paste the job posting link and we'll analyze it automatically, or fill in the fields manually.</div>
 
             <div className="url-bar">
               <input
@@ -395,47 +395,47 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
                 value={jobUrl}
                 onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); }}
                 onKeyDown={e => e.key === "Enter" && scrapeJob()}
-                placeholder="https://linkedin.com/jobs/... o cualquier link de trabajo"
+                placeholder="https://linkedin.com/jobs/... or any job posting link"
               />
               <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
-                {scraping ? "Analizando..." : "✦ Analizar"}
+                {scraping ? "Analyzing..." : "✦ Analyze"}
               </button>
             </div>
             {scraping && (
               <div className="loader" style={{ marginTop: -10, marginBottom: 10 }}>
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Leyendo la oferta de trabajo...
+                Reading the job posting...
               </div>
             )}
             {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
 
             <div className="url-divider">
               <div className="url-divider-line" />
-              <div className="url-divider-text">o llena manualmente</div>
+              <div className="url-divider-text">or fill manually</div>
               <div className="url-divider-line" />
             </div>
 
             <div className="row">
               <div className="field">
-                <label>Puesto</label>
-                <input value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder="ej. Diseñador UX/UI" />
+                <label>Position</label>
+                <input value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder="e.g. UX/UI Designer" />
               </div>
               <div className="field">
-                <label>Empresa</label>
-                <input value={company} onChange={e => setCompany(e.target.value)} placeholder="ej. Google (opcional)" />
+                <label>Company</label>
+                <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google (optional)" />
               </div>
             </div>
             <div className="field">
-              <label>Descripción del trabajo</label>
+              <label>Job Description</label>
               <textarea
                 rows={6}
-                placeholder="Pega aquí el texto del anuncio: requisitos, responsabilidades, habilidades buscadas..."
+                placeholder="Paste the job posting text here: requirements, responsibilities, skills..."
                 value={jdText}
                 onChange={e => setJdText(e.target.value)}
               />
             </div>
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: ".7rem", color: "#444", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>Ejemplos rápidos:</div>
+              <div style={{ fontSize: ".7rem", color: "#444", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>Quick examples:</div>
               {EXAMPLES.map(ex => (
                 <span key={ex.role} className="badge" onClick={() => { setJobRole(ex.role); setCompany(ex.company); setJdText(ex.jd); }}>
                   {ex.role}
@@ -443,21 +443,21 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
               ))}
             </div>
             <div className="field" style={{ maxWidth: 220 }}>
-              <label>Número de preguntas</label>
+              <label>Number of questions</label>
               <select value={numQ} onChange={e => setNumQ(e.target.value)}>
-                <option value="3">3 — Rápido</option>
-                <option value="5">5 — Normal</option>
-                <option value="7">7 — Completo</option>
-                <option value="10">10 — Intensivo</option>
+                <option value="3">3 — Quick</option>
+                <option value="5">5 — Standard</option>
+                <option value="7">7 — Full</option>
+                <option value="10">10 — Intensive</option>
               </select>
             </div>
             <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
-              {startLoading ? "Preparando entrevistador..." : "Iniciar entrevista →"}
+              {startLoading ? "Preparing interviewer..." : "Start interview →"}
             </button>
             {startLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Preparando tu entrevistador de IA...
+                Setting up your AI interviewer...
               </div>
             )}
             {startErr && <div className="err-box">{startErr}</div>}
@@ -470,7 +470,7 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
             <div className="job-chip">
               <div className="job-icon">💼</div>
               <div>
-                <div className="job-company">{company || "Empresa"}</div>
+                <div className="job-company">{company || "Company"}</div>
                 <div className="job-role">{jobRole}</div>
               </div>
             </div>
@@ -496,7 +496,7 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
             </div>
 
             <div className="speak-indicator">
-              {speaking ? "🔊 Entrevistador hablando..." : recording ? "🔴 Grabando — toca detener y luego enviar" : ""}
+              {speaking ? "🔊 Interviewer speaking..." : recording ? "🔴 Recording — tap stop then send" : ""}
             </div>
 
             {interviewErr && <div className="err-box">{interviewErr}</div>}
@@ -512,7 +512,7 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
-                placeholder={aiThinking ? "Entrevistador respondiendo..." : "Tu respuesta..."}
+                placeholder={aiThinking ? "Interviewer is typing..." : "Your answer..."}
                 disabled={aiThinking}
               />
               <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>
@@ -521,7 +521,7 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
             </div>
 
             <button className="end-btn" onClick={() => finishInterview(apiMessages)}>
-              Terminar entrevista y ver resultados
+              End interview and see results
             </button>
           </div>
         )}
@@ -529,15 +529,15 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
         {/* ── RESULTS ── */}
         {phase === "done" && (
           <div className="card" key="done">
-            <div className="card-title">Entrevista completada 🎉</div>
+            <div className="card-title">Interview complete 🎉</div>
             <div className="card-desc" style={{ marginBottom: 20 }}>
-              Evaluación para <strong style={{ color: "#eeeeff" }}>{jobRole}</strong>{company ? ` en ${company}` : ""}
+              Evaluation for <strong style={{ color: "#eeeeff" }}>{jobRole}</strong>{company ? ` at ${company}` : ""}
             </div>
 
             {evalLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Analizando tu desempeño...
+                Analyzing your performance...
               </div>
             )}
 
@@ -546,12 +546,12 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
                 <div className="summary-bar">
                   <div className={`summary-ring ${SC(evaluation.puntaje)}`}>{evaluation.puntaje}</div>
                   <div>
-                    <div className="summary-label">Puntaje general</div>
+                    <div className="summary-label">Overall score</div>
                     <div className="summary-val">{evaluation.nivel}</div>
                   </div>
                 </div>
                 <div className="fb">
-                  <div className="fb-head">Fortalezas</div>
+                  <div className="fb-head">Strengths</div>
                   <div className="fb-body">
                     {evaluation.fortalezas?.map((f, i) => (
                       <div className="li" key={i}><span className="li-dot" style={{ color: "#4ecc96" }}>✓</span>{f}</div>
@@ -559,7 +559,7 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
                   </div>
                 </div>
                 <div className="fb">
-                  <div className="fb-head">Áreas de mejora</div>
+                  <div className="fb-head">Areas for improvement</div>
                   <div className="fb-body">
                     {evaluation.mejoras?.map((m, i) => (
                       <div className="li" key={i}><span className="li-dot" style={{ color: "#f06060" }}>→</span>{m}</div>
@@ -575,9 +575,9 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
             )}
 
             <button className="btn" onClick={startInterview} disabled={startLoading}>
-              {startLoading ? "Preparando..." : "Repetir entrevista →"}
+              {startLoading ? "Preparing..." : "Repeat interview →"}
             </button>
-            <button className="btn-ghost" onClick={restart}>Practicar para otro trabajo</button>
+            <button className="btn-ghost" onClick={restart}>Practice for another job</button>
           </div>
         )}
       </div>
