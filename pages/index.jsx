@@ -187,25 +187,46 @@ async function callAI(system, messages, maxTokens = 400) {
 /* ── TTS ─────────────────────────────────────────────────────── */
 function useTTS() {
   const [speaking, setSpeaking] = useState(false);
-  const speak = useCallback((text) => {
+
+  const doSpeak = useCallback((text) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = "en-US";
-    utt.rate = 0.92;
+    utt.rate = 0.9;
     const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang.startsWith("en"));
+    const enVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google"))
+      || voices.find(v => v.lang === "en-US")
+      || voices.find(v => v.lang.startsWith("en"));
     if (enVoice) utt.voice = enVoice;
     utt.onstart = () => setSpeaking(true);
     utt.onend = () => setSpeaking(false);
     utt.onerror = () => setSpeaking(false);
     window.speechSynthesis.speak(utt);
   }, []);
+
+  const speak = useCallback((text) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak(text);
+    } else {
+      // Voices load async — wait for them
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        doSpeak(text);
+      };
+      // Fallback timeout in case event never fires
+      setTimeout(() => doSpeak(text), 300);
+    }
+  }, [doSpeak]);
+
   const stop = useCallback(() => {
     if (typeof window === "undefined") return;
     window.speechSynthesis?.cancel();
     setSpeaking(false);
   }, []);
+
   return { speak, stop, speaking };
 }
 
