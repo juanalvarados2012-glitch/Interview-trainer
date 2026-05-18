@@ -211,16 +211,21 @@ export default function App() {
   }, [displayMessages, aiThinking]);
 
   const buildSystem = useCallback(() =>
-    `Eres un entrevistador de RRHH profesional para el puesto de "${jobRole}" en ${company || "nuestra empresa"}.
+    `Eres un entrevistador senior de RRHH para el puesto de "${jobRole}" en ${company || "nuestra empresa"}. Conduces entrevistas REALES y exigentes.
 Descripción del puesto: ${jdText}
 
-INSTRUCCIONES:
-- Al recibir [INICIAR]: preséntate brevemente en 1 oración y haz tu primera pregunta específica al puesto
-- Tras cada respuesta del candidato: reacciona brevemente (máx 1 oración) y haz la siguiente pregunta
-- Debes hacer exactamente ${numQ} preguntas en total, específicas y basadas en la descripción del puesto
-- Cuando el candidato haya respondido tu pregunta número ${numQ}: agradece, cierra la entrevista con amabilidad e incluye exactamente "|||FIN|||" al final de tu mensaje de cierre
-- Habla siempre en español, sé profesional y conciso (máx 4 oraciones por turno)
-- NO evalúes ni des feedback durante la entrevista — solo conduce la conversación naturalmente`,
+REGLAS DE COMPORTAMIENTO:
+1. Al recibir [INICIAR]: preséntate en 1 oración y haz tu primera pregunta específica al puesto.
+2. Evalúa CADA respuesta antes de continuar:
+   - Si la respuesta es vaga, muy corta (menos de 2-3 oraciones), o no responde la pregunta: NO pases a la siguiente. Pide que elabore con ejemplos concretos. Ejemplo: "Entiendo, pero ¿puedes darme un ejemplo específico de cuándo hiciste eso?"
+   - Si el candidato dice solo "sí", "no", "claro", o frases de una palabra: exige más. Ejemplo: "Necesito que me cuentes con más detalle. ¿Qué hiciste exactamente?"
+   - Si la respuesta es evasiva o genérica: señálalo y repregunta. Ejemplo: "Eso suena muy general. ¿Qué hiciste TÚ específicamente en esa situación?"
+   - Solo avanza a la siguiente pregunta cuando la respuesta sea suficientemente completa y concreta.
+3. Puedes hacer hasta 2 preguntas de seguimiento por pregunta principal antes de avanzar.
+4. Cuenta solo las ${numQ} preguntas PRINCIPALES (no los follow-ups).
+5. NO digas "excelente", "genial", "perfecto" ni valides respuestas malas. Usa frases neutras como "Entiendo", "De acuerdo", "Cuéntame más".
+6. Cuando el candidato responda la pregunta principal #${numQ} de forma aceptable: cierra la entrevista con amabilidad e incluye exactamente "|||FIN|||" al final.
+7. Habla siempre en español. Máx 3 oraciones por turno. Sé directo y profesional, no condescendiente.`,
     [jobRole, company, jdText, numQ]
   );
 
@@ -285,9 +290,15 @@ INSTRUCCIONES:
       .join("\n\n");
 
     const evalSystem =
-      `Eres un coach de entrevistas. Analiza esta entrevista y evalúa al candidato para el puesto de "${jobRole}".
+      `Eres un evaluador de entrevistas ESTRICTO y HONESTO para el puesto de "${jobRole}".
+Analiza la calidad REAL de las respuestas del candidato. Sé crítico:
+- Respuestas vagas, cortas o sin ejemplos concretos = puntaje bajo (20-40)
+- Respuestas aceptables pero genéricas = puntaje medio (40-65)
+- Respuestas con ejemplos reales, métricas y estructura = puntaje alto (65-85)
+- Respuestas excepcionales, método STAR completo, muy específicas = 85-100
+NO infles el puntaje. Si las respuestas fueron malas, dilo claramente.
 Responde ÚNICAMENTE con JSON válido sin texto extra:
-{"puntaje":75,"nivel":"Buen candidato","fortalezas":["punto1","punto2","punto3"],"mejoras":["punto1","punto2"],"recomendacion":"consejo final en 1-2 oraciones"}`;
+{"puntaje":45,"nivel":"Necesitas más preparación","fortalezas":["punto concreto1"],"mejoras":["punto concreto1","punto concreto2","punto concreto3"],"recomendacion":"consejo directo y honesto en 1-2 oraciones"}`;
 
     try {
       const raw = await callAI(evalSystem, [{ role: "user", content: transcript }], 600);
