@@ -59,6 +59,15 @@ const css = `
   .li-dot{flex-shrink:0;margin-top:2px}
   .tip-box{background:#080812;border:1px solid #1a1a30;border-left:3px solid #3030a0;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#555;margin-bottom:16px;line-height:1.5}
   .err-box{background:#1a0808;border:1px solid #3a1010;border-radius:10px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#cc6060;margin-top:12px;line-height:1.5}
+  .url-bar{display:flex;gap:8px;margin-bottom:20px}
+  .url-input{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
+  .url-input:focus{border-color:#3030a0}
+  .url-btn{flex-shrink:0;padding:10px 16px;border-radius:10px;border:none;background:#12122a;border:1px solid #2a2a50;color:#8080cc;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .url-btn:hover:not(:disabled){background:#1a1a40;color:#aaaaff}
+  .url-btn:disabled{opacity:.4;cursor:not-allowed}
+  .url-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+  .url-divider-line{flex:1;height:1px;background:#1a1a30}
+  .url-divider-text{font-family:'DM Mono',monospace;font-size:.68rem;color:#333;text-transform:uppercase;letter-spacing:.08em}
   /* ── CHAT ── */
   .chat-area{height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
   .chat-area::-webkit-scrollbar{width:3px}
@@ -190,6 +199,9 @@ export default function App() {
   const [numQ, setNumQ] = useState("5");
   const [startLoading, setStartLoading] = useState(false);
   const [startErr, setStartErr] = useState("");
+  const [jobUrl, setJobUrl] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [scrapeErr, setScrapeErr] = useState("");
 
   // Interview
   const [apiMessages, setApiMessages] = useState([]);
@@ -228,6 +240,28 @@ REGLAS DE COMPORTAMIENTO:
 7. Habla siempre en español. Máx 3 oraciones por turno. Sé directo y profesional, no condescendiente.`,
     [jobRole, company, jdText, numQ]
   );
+
+  /* ── SCRAPE JOB URL ── */
+  const scrapeJob = async () => {
+    if (!jobUrl.trim()) return;
+    setScraping(true);
+    setScrapeErr("");
+    try {
+      const res = await fetch("/api/scrape-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: jobUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error desconocido");
+      if (data.role) setJobRole(data.role);
+      if (data.company) setCompany(data.company);
+      if (data.description) setJdText(data.description);
+    } catch (e) {
+      setScrapeErr(e.message);
+    }
+    setScraping(false);
+  };
 
   /* ── START INTERVIEW ── */
   const startInterview = async () => {
@@ -353,7 +387,34 @@ Responde ÚNICAMENTE con JSON válido sin texto extra:
         {phase === "setup" && (
           <div className="card" key="setup">
             <div className="card-title">¿A qué trabajo quieres aplicar?</div>
-            <div className="card-desc">Pega la descripción real del anuncio y practica con un entrevistador de IA en conversación real.</div>
+            <div className="card-desc">Pega el link del anuncio y lo analizamos automáticamente, o llena los campos manualmente.</div>
+
+            <div className="url-bar">
+              <input
+                className="url-input"
+                value={jobUrl}
+                onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); }}
+                onKeyDown={e => e.key === "Enter" && scrapeJob()}
+                placeholder="https://linkedin.com/jobs/... o cualquier link de trabajo"
+              />
+              <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
+                {scraping ? "Analizando..." : "✦ Analizar"}
+              </button>
+            </div>
+            {scraping && (
+              <div className="loader" style={{ marginTop: -10, marginBottom: 10 }}>
+                <div className="dot" /><div className="dot" /><div className="dot" />
+                Leyendo la oferta de trabajo...
+              </div>
+            )}
+            {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
+
+            <div className="url-divider">
+              <div className="url-divider-line" />
+              <div className="url-divider-text">o llena manualmente</div>
+              <div className="url-divider-line" />
+            </div>
+
             <div className="row">
               <div className="field">
                 <label>Puesto</label>
