@@ -79,24 +79,43 @@ const css = `
   .diff-badge.easy{background:#0a1a12;color:#4ecc96;border:1px solid #4ecc9640}
   .diff-badge.medium{background:#1a1400;color:#f0c060;border:1px solid #f0c06040}
   .diff-badge.hard{background:#1a0808;color:#f06060;border:1px solid #f0606040}
+  /* ── INTERVIEWER CARD ── */
+  .iv-card{background:#080812;border:1px solid #1a1a30;border-radius:18px;padding:18px 20px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+  .iv-avatar-wrap{position:relative;flex-shrink:0}
+  .iv-avatar{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .iv-avatar.easy{background:linear-gradient(135deg,#1a4a2a,#2a6a3a)}
+  .iv-avatar.medium{background:linear-gradient(135deg,#1a1a50,#3030a0)}
+  .iv-avatar.hard{background:linear-gradient(135deg,#4a1010,#8a2020)}
+  .iv-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;opacity:0}
+  .iv-ring.easy{border-color:#4ecc96}
+  .iv-ring.medium{border-color:#6060cc}
+  .iv-ring.hard{border-color:#f06060}
+  .iv-ring.speaking{opacity:1;animation:ivSpeak 1.4s ease-in-out infinite}
+  @keyframes ivSpeak{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.06);opacity:1}}
+  .iv-info{flex:1}
+  .iv-name{font-size:1rem;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+  .iv-title{font-size:.72rem;color:#444;font-family:'DM Mono',monospace}
+  .iv-status{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .iv-dot{width:6px;height:6px;border-radius:50%;background:#4ecc96;animation:ivPulse 2s infinite}
+  @keyframes ivPulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .iv-live{font-family:'DM Mono',monospace;font-size:.65rem;color:#4ecc96;text-transform:uppercase;letter-spacing:.08em}
+  .iv-typing{font-family:'DM Mono',monospace;font-size:.65rem;color:#555;margin-left:4px}
   /* ── CHAT ── */
-  .chat-area{height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
+  .chat-area{height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
   .chat-area::-webkit-scrollbar{width:3px}
   .chat-area::-webkit-scrollbar-track{background:transparent}
   .chat-area::-webkit-scrollbar-thumb{background:#2a2a50;border-radius:2px}
   .msg{display:flex;gap:8px;animation:fadeUp .25s ease}
   .msg-ai{flex-direction:row}
   .msg-user{flex-direction:row-reverse}
-  .avatar{width:28px;height:28px;border-radius:50%;background:#12122a;border:1px solid #2a2a50;display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;margin-top:2px}
   .bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-family:'DM Mono',monospace;font-size:.82rem;line-height:1.55}
   .bubble-ai{background:#0d0d20;border:1px solid #1a1a35;border-top-left-radius:4px;color:#ccc}
   .bubble-user{background:#20208a;border:1px solid #3030b0;border-top-right-radius:4px;color:#eeeeff}
+  .cursor{display:inline-block;width:2px;height:14px;background:#6060cc;margin-left:2px;animation:blink .7s infinite;vertical-align:middle}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   .coach-tip{max-width:85%;margin-left:auto;margin-top:-4px;margin-bottom:2px;background:#0a0a1a;border:1px solid #2a2050;border-radius:10px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:.72rem;color:#7060aa;line-height:1.5;animation:fadeUp .3s ease}
   .coach-tip-label{font-size:.62rem;color:#4030a0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
   .coach-tip-loading{color:#3030a0;font-size:.68rem;font-family:'DM Mono',monospace;text-align:right;padding:2px 0}
-  .thinking{display:flex;gap:4px;align-items:center}
-  .t-dot{width:5px;height:5px;background:#4040c0;border-radius:50%;animation:bounce 1.2s infinite}
-  .t-dot:nth-child(2){animation-delay:.2s}.t-dot:nth-child(3){animation-delay:.4s}
   .chat-input-bar{display:flex;gap:8px;align-items:center;margin-top:12px}
   .chat-input{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
   .chat-input:focus{border-color:#3030a0}
@@ -109,10 +128,43 @@ const css = `
   @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 12px rgba(180,80,255,0)}}
   .end-btn{width:100%;padding:9px;border-radius:10px;border:1px solid #2a1a1a;background:transparent;color:#664444;font-family:'Syne',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;margin-top:10px}
   .end-btn:hover{border-color:#3a1a1a;color:#cc6060}
-  .speak-indicator{font-family:'DM Mono',monospace;font-size:.68rem;color:#3030a0;text-align:center;margin-top:6px;min-height:16px}
 `;
 
 /* ── API ─────────────────────────────────────────────────────── */
+async function callAIStream(system, messages, maxTokens = 400, onChunk) {
+  const res = await fetch("/api/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let accumulated = "";
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.error) throw new Error(parsed.error);
+        const delta = parsed.choices?.[0]?.delta?.content || "";
+        if (delta) { accumulated += delta; onChunk(accumulated); }
+      } catch (e) { if (e.message !== "Unexpected end of JSON input") throw e; }
+    }
+  }
+  return accumulated;
+}
+
 async function callAI(system, messages, maxTokens = 400) {
   const res = await fetch("/api/claude", {
     method: "POST",
@@ -308,14 +360,20 @@ INTERVIEW RULES (follow strictly):
   const startInterview = async () => {
     setStartLoading(true);
     setStartErr("");
+    setTips({}); setLoadingTips({});
     const trigger = [{ role: "user", content: "[START]" }];
+    // Streaming placeholder
+    setDisplayMessages([{ role: "assistant", content: "", streaming: true }]);
     try {
-      const text = await callAI(buildSystem(), trigger);
+      const text = await callAIStream(buildSystem(), trigger, 400, (partial) => {
+        setDisplayMessages([{ role: "assistant", content: partial, streaming: true }]);
+      });
       setApiMessages([...trigger, { role: "assistant", content: text }]);
-      setDisplayMessages([{ role: "assistant", content: text }]);
+      setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
       setPhase("interview");
       speak(text);
     } catch (e) {
+      setDisplayMessages([]);
       setStartErr("Error starting interview: " + e.message);
     }
     setStartLoading(false);
@@ -356,9 +414,18 @@ Be specific to what they actually said — don't give generic advice. No bullet 
     // Find last interviewer question to give context to the coach
     const lastQuestion = [...displayMessages].reverse().find(m => m.role === "assistant")?.content || "";
 
-    // Fire interviewer + coach tip in parallel
+    // Add streaming placeholder for AI response
+    setDisplayMessages(prev => [...prev, { role: "assistant", content: "", streaming: true }]);
+
+    // Fire interviewer (streaming) + coach tip in parallel
     const [interviewerResult] = await Promise.allSettled([
-      callAI(buildSystem(), newApi),
+      callAIStream(buildSystem(), newApi, 400, (partial) => {
+        setDisplayMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: partial, streaming: true };
+          return updated;
+        });
+      }),
       fetchTip(lastQuestion, trimmed, userMsgIndex),
     ]);
 
@@ -366,12 +433,17 @@ Be specific to what they actually said — don't give generic advice. No bullet 
       const raw = interviewerResult.value;
       const isEnd = raw.includes("|||END|||");
       const cleanText = raw.replace("|||END|||", "").trim();
-      const aiMsg = { role: "assistant", content: cleanText };
+      const aiMsg = { role: "assistant", content: cleanText, streaming: false };
       setApiMessages([...newApi, { role: "assistant", content: raw }]);
-      setDisplayMessages(prev => [...prev, aiMsg]);
+      setDisplayMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = aiMsg;
+        return updated;
+      });
       speak(cleanText);
       if (isEnd) setTimeout(() => finishInterview([...newApi, aiMsg]), 2500);
     } else {
+      setDisplayMessages(prev => prev.slice(0, -1));
       setInterviewErr("Error: " + interviewerResult.reason?.message + ". Please try again.");
     }
     setAiThinking(false);
@@ -563,24 +635,40 @@ Respond ONLY with valid JSON, no extra text or markdown:
         {/* ── INTERVIEW ── */}
         {phase === "interview" && (
           <div className="card" key="interview">
-            <div className="job-chip">
-              <div className="job-icon">💼</div>
-              <div style={{ flex: 1 }}>
-                <div className="job-company">{company || "Company"}</div>
-                <div className="job-role">{jobRole}</div>
-              </div>
-              {(() => { const cfg = DIFFICULTY_CONFIG[difficulty]; return (
-                <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {cfg.label}</span>
-              ); })()}
-            </div>
+            {/* Interviewer presence card */}
+            {(() => {
+              const cfg = DIFFICULTY_CONFIG[difficulty];
+              const initials = cfg.name.split(" ").map(n => n[0]).join("");
+              const isStreaming = displayMessages.some(m => m.streaming);
+              return (
+                <div className="iv-card">
+                  <div className="iv-avatar-wrap">
+                    <div className={`iv-avatar ${difficulty}`}>{initials}</div>
+                    <div className={`iv-ring ${difficulty}${(speaking || isStreaming) ? " speaking" : ""}`} />
+                  </div>
+                  <div className="iv-info">
+                    <div className="iv-name">{cfg.name}</div>
+                    <div className="iv-title">{cfg.title} · {company || "Company"}</div>
+                    <div className="iv-status">
+                      <div className="iv-dot" />
+                      <span className="iv-live">Live interview</span>
+                      <span className="iv-typing">
+                        {isStreaming ? "· typing..." : speaking ? "· speaking..." : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {cfg.label}</span>
+                </div>
+              );
+            })()}
 
             <div className="chat-area">
               {displayMessages.map((msg, i) => (
                 <div key={i}>
                   <div className={`msg msg-${msg.role === "assistant" ? "ai" : "user"}`}>
-                    {msg.role === "assistant" && <div className="avatar">🎙</div>}
                     <div className={`bubble bubble-${msg.role === "assistant" ? "ai" : "user"}`}>
                       {msg.content}
+                      {msg.streaming && msg.content && <span className="cursor" />}
                     </div>
                   </div>
                   {msg.role === "user" && loadingTips[i] && (
@@ -594,19 +682,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
                   )}
                 </div>
               ))}
-              {aiThinking && (
-                <div className="msg msg-ai">
-                  <div className="avatar">🎙</div>
-                  <div className="bubble bubble-ai thinking">
-                    <div className="t-dot" /><div className="t-dot" /><div className="t-dot" />
-                  </div>
-                </div>
-              )}
               <div ref={chatEndRef} />
-            </div>
-
-            <div className="speak-indicator">
-              {speaking ? "🔊 Interviewer speaking..." : recording ? "🔴 Recording — tap stop then send" : ""}
             </div>
 
             {interviewErr && <div className="err-box">{interviewErr}</div>}
@@ -622,13 +698,19 @@ Respond ONLY with valid JSON, no extra text or markdown:
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
-                placeholder={aiThinking ? "Interviewer is typing..." : "Your answer..."}
+                placeholder={aiThinking ? `${DIFFICULTY_CONFIG[difficulty].name.split(" ")[0]} is typing...` : "Your answer..."}
                 disabled={aiThinking}
               />
               <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>
                 ➤
               </button>
             </div>
+
+            {recording && (
+              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".68rem", color:"#c060ff", textAlign:"center", marginTop:6 }}>
+                🔴 Recording — tap stop, then send
+              </div>
+            )}
 
             <button className="end-btn" onClick={() => finishInterview(apiMessages)}>
               End interview and see results
