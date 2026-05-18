@@ -43,58 +43,6 @@ const css = `
   .job-icon{font-size:1.6rem;line-height:1}
   .job-company{font-size:.7rem;font-family:'DM Mono',monospace;color:#4040a0;text-transform:uppercase;letter-spacing:.08em}
   .job-role{font-size:.95rem;font-weight:700}
-  .q-progress{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;margin-bottom:8px;display:flex;justify-content:space-between}
-  .q-bar-bg{height:3px;background:#1a1a30;border-radius:2px;margin-bottom:20px}
-  .q-bar-fill{height:3px;background:#3030d0;border-radius:2px;transition:width .4s ease}
-  .q-num{font-family:'DM Mono',monospace;font-size:.7rem;color:#3030d0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
-  .q-text{font-size:1.05rem;font-weight:700;line-height:1.4;margin-bottom:16px;letter-spacing:-.01em}
-  .voice-q-bar{display:flex;align-items:center;gap:10px;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 14px;margin-bottom:14px}
-  .speak-btn{flex-shrink:0;width:38px;height:38px;border-radius:50%;border:none;background:#12122a;color:#6060cc;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
-  .speak-btn:hover{background:#22223a;color:#9090ff}
-  .speak-btn.speaking{background:#1a1a40;color:#9090ff;animation:pulseRing 1.5s infinite}
-  @keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(100,100,255,.4)}50%{box-shadow:0 0 0 8px rgba(100,100,255,0)}}
-  .speak-label{font-family:'DM Mono',monospace;font-size:.72rem;color:#444}
-  .speak-label.on{color:#6060cc}
-  .tip-box{background:#080812;border:1px solid #1a1a30;border-left:3px solid #3030a0;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#555;margin-bottom:16px;line-height:1.5}
-  .tip-box strong{color:#4040a0}
-  .mode-toggle{display:flex;gap:8px;margin-bottom:18px}
-  .mode-pill{flex:1;padding:10px;border-radius:10px;border:1px solid #1a1a30;background:transparent;color:#555;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
-  .mode-pill.active{background:#12122a;border-color:#3030a0;color:#fff}
-  .mode-pill:hover:not(.active){color:#888}
-  .mic-area{background:#080812;border:1px solid #1a1a30;border-radius:14px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px}
-  .mic-btn{width:72px;height:72px;border-radius:50%;border:none;background:#12122a;color:#6060cc;cursor:pointer;font-size:1.8rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
-  .mic-btn.rec{background:#1a0a30;color:#c060ff;animation:pulseMic 1s infinite}
-  .mic-btn:hover:not(.rec){background:#1a1a3a;color:#8080ff}
-  @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 16px rgba(180,80,255,0)}}
-  .mic-status{font-family:'DM Mono',monospace;font-size:.78rem;color:#444}
-  .mic-status.on{color:#c060ff}
-  .voice-wave{display:flex;align-items:center;justify-content:center;gap:3px;height:32px}
-  .wave-bar{width:3px;border-radius:2px;background:#c060ff;animation:wave 1s infinite}
-  .wave-bar:nth-child(1){animation-delay:0s;height:8px}
-  .wave-bar:nth-child(2){animation-delay:.1s;height:16px}
-  .wave-bar:nth-child(3){animation-delay:.2s;height:22px}
-  .wave-bar:nth-child(4){animation-delay:.3s;height:14px}
-  .wave-bar:nth-child(5){animation-delay:.4s;height:20px}
-  .wave-bar:nth-child(6){animation-delay:.3s;height:10px}
-  .wave-bar:nth-child(7){animation-delay:.2s;height:18px}
-  @keyframes wave{0%,100%{transform:scaleY(.4);opacity:.5}50%{transform:scaleY(1);opacity:1}}
-  .transcript-box{margin-top:14px;text-align:left;background:#0d0d20;border:1px solid #1a1a30;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#888;line-height:1.5;width:100%}
-  .transcript-label{font-size:.68rem;color:#444;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-  .score-row{display:flex;gap:10px;margin-bottom:18px}
-  .score-pill{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:12px;text-align:center}
-  .score-n{font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
-  .score-n.g{color:#4ecc96}.score-n.y{color:#f0c060}.score-n.r{color:#f06060}
-  .score-l{font-size:.68rem;color:#444;font-family:'DM Mono',monospace;margin-top:4px}
-  .fb{background:#080812;border:1px solid #1a1a30;border-radius:12px;overflow:hidden;margin-bottom:12px}
-  .fb-head{padding:10px 14px;background:#0d0d20;font-size:.72rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
-  .fb-body{padding:14px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.6;color:#888}
-  .fb-actions{display:flex;gap:6px}
-  .copy-btn{background:#12122a;border:none;border-radius:6px;padding:3px 10px;color:#666;font-family:'DM Mono',monospace;font-size:.72rem;cursor:pointer;transition:all .2s}
-  .copy-btn:hover{background:#1e1e40;color:#aaa}
-  .li{display:flex;gap:8px;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.5}
-  .li-dot{flex-shrink:0;margin-top:2px}
-  .nav-btns{display:flex;gap:10px;margin-top:16px}
-  .nav-btns .btn,.nav-btns .btn-ghost{flex:1;margin:0}
   .badge{display:inline-flex;background:#0d0d22;border:1px solid #1a1a35;border-radius:8px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:.72rem;color:#555;cursor:pointer;margin:3px;transition:all .2s}
   .badge:hover{background:#12122a;color:#9090ff}
   .summary-bar{display:flex;align-items:center;gap:12px;background:#080812;border:1px solid #1a1a30;border-radius:12px;padding:14px 18px;margin-bottom:20px}
@@ -104,19 +52,53 @@ const css = `
   .summary-ring.low{background:#2a0a0a;color:#f06060;border:2px solid #f0606040}
   .summary-label{font-size:.72rem;font-family:'DM Mono',monospace;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
   .summary-val{font-size:1rem;font-weight:700}
+  .fb{background:#080812;border:1px solid #1a1a30;border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .fb-head{padding:10px 14px;background:#0d0d20;font-size:.72rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em}
+  .fb-body{padding:14px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.6;color:#888}
+  .li{display:flex;gap:8px;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.5}
+  .li-dot{flex-shrink:0;margin-top:2px}
+  .tip-box{background:#080812;border:1px solid #1a1a30;border-left:3px solid #3030a0;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#555;margin-bottom:16px;line-height:1.5}
   .err-box{background:#1a0808;border:1px solid #3a1010;border-radius:10px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#cc6060;margin-top:12px;line-height:1.5}
+  /* ── CHAT ── */
+  .chat-area{height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
+  .chat-area::-webkit-scrollbar{width:3px}
+  .chat-area::-webkit-scrollbar-track{background:transparent}
+  .chat-area::-webkit-scrollbar-thumb{background:#2a2a50;border-radius:2px}
+  .msg{display:flex;gap:8px;animation:fadeUp .25s ease}
+  .msg-ai{flex-direction:row}
+  .msg-user{flex-direction:row-reverse}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#12122a;border:1px solid #2a2a50;display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;margin-top:2px}
+  .bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-family:'DM Mono',monospace;font-size:.82rem;line-height:1.55}
+  .bubble-ai{background:#0d0d20;border:1px solid #1a1a35;border-top-left-radius:4px;color:#ccc}
+  .bubble-user{background:#20208a;border:1px solid #3030b0;border-top-right-radius:4px;color:#eeeeff}
+  .thinking{display:flex;gap:4px;align-items:center}
+  .t-dot{width:5px;height:5px;background:#4040c0;border-radius:50%;animation:bounce 1.2s infinite}
+  .t-dot:nth-child(2){animation-delay:.2s}.t-dot:nth-child(3){animation-delay:.4s}
+  .chat-input-bar{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .chat-input{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
+  .chat-input:focus{border-color:#3030a0}
+  .send-btn{width:40px;height:40px;border-radius:10px;border:none;background:#2020a0;color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+  .send-btn:hover:not(:disabled){background:#3030c0}
+  .send-btn:disabled{opacity:.35;cursor:not-allowed}
+  .mic-sm{width:40px;height:40px;border-radius:10px;border:none;background:#12122a;color:#6060cc;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+  .mic-sm.rec{background:#1a0a30;color:#c060ff;animation:pulseMic 1s infinite}
+  .mic-sm:hover:not(.rec){background:#1a1a3a;color:#8080ff}
+  @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 12px rgba(180,80,255,0)}}
+  .end-btn{width:100%;padding:9px;border-radius:10px;border:1px solid #2a1a1a;background:transparent;color:#664444;font-family:'Syne',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;margin-top:10px}
+  .end-btn:hover{border-color:#3a1a1a;color:#cc6060}
+  .speak-indicator{font-family:'DM Mono',monospace;font-size:.68rem;color:#3030a0;text-align:center;margin-top:6px;min-height:16px}
 `;
 
 /* ── API ─────────────────────────────────────────────────────── */
-async function callClaude(system, user) {
+async function callAI(system, messages, maxTokens = 400) {
   const res = await fetch("/api/claude", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
+      model: "llama-3.3-70b-versatile",
+      max_tokens: maxTokens,
       system,
-      messages: [{ role: "user", content: user }],
+      messages,
     }),
   });
   if (!res.ok) {
@@ -158,7 +140,6 @@ function useSTT() {
   const [supported, setSupported] = useState(false);
   const recRef = useRef(null);
   const cbRef = useRef(null);
-
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     setSupported(!!SR);
@@ -178,17 +159,14 @@ function useSTT() {
     rec.onerror = () => setRecording(false);
     recRef.current = rec;
   }, []);
-
   const startRec = useCallback((onChunk) => {
     cbRef.current = onChunk;
     try { recRef.current?.start(); setRecording(true); } catch (e) { console.warn(e); }
   }, []);
-
   const stopRec = useCallback(() => {
     try { recRef.current?.stop(); } catch (e) { console.warn(e); }
     setRecording(false);
   }, []);
-
   return { recording, supported, startRec, stopRec };
 }
 
@@ -199,151 +177,147 @@ const EXAMPLES = [
   { role: "Community Manager", company: "Agencia de marketing", jd: "Community manager con experiencia en redes sociales, creación de contenido, análisis de métricas, gestión de comunidades y campañas digitales para marcas de consumo." },
 ];
 
-const ANGLES = [
-  "situaciones pasadas con el método STAR (Situación-Tarea-Acción-Resultado)",
-  "habilidades técnicas específicas del puesto",
-  "alineación con la cultura y valores de la empresa",
-  "resolución de conflictos interpersonales",
-  "liderazgo e influencia sin autoridad formal",
-  "manejo de deadlines y presión alta",
-  "logros concretos medibles con métricas",
-  "adaptación a cambios inesperados",
-  "toma de decisiones con información limitada",
-  "colaboración entre equipos o departamentos",
-  "crecimiento profesional y aprendizaje continuo",
-  "manejo de clientes difíciles o situaciones delicadas",
-];
-
-const SC = n => n >= 80 ? "g" : n >= 60 ? "y" : "r";
-const AVG_LBL = avg =>
-  avg >= 80 ? { label: "Excelente preparación ✓", cls: "great" }
-  : avg >= 60 ? { label: "Buen nivel, sigue mejorando", cls: "ok" }
-  : { label: "Necesitas más práctica", cls: "low" };
+const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
 
 /* ── APP ─────────────────────────────────────────────────────── */
 export default function App() {
   const [phase, setPhase] = useState("setup");
+
+  // Setup
   const [jobRole, setJobRole] = useState("");
   const [company, setCompany] = useState("");
   const [jdText, setJdText] = useState("");
   const [numQ, setNumQ] = useState("5");
-  const [genLoading, setGenLoading] = useState(false);
-  const [genErr, setGenErr] = useState("");
-  const [questions, setQuestions] = useState([]);
-  const [usedQs, setUsedQs] = useState([]);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answerMode, setAnswerMode] = useState("voice");
-  const [answer, setAnswer] = useState("");
-  const [evalLoading, setEvalLoading] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-  const [fbErr, setFbErr] = useState("");
-  const [allResults, setAllResults] = useState([]);
-  const [copied, setCopied] = useState(null);
+  const [startLoading, setStartLoading] = useState(false);
+  const [startErr, setStartErr] = useState("");
 
+  // Interview
+  const [apiMessages, setApiMessages] = useState([]);
+  const [displayMessages, setDisplayMessages] = useState([]);
+  const [inputText, setInputText] = useState("");
+  const [aiThinking, setAiThinking] = useState(false);
+  const [interviewErr, setInterviewErr] = useState("");
+
+  // Results
+  const [evaluation, setEvaluation] = useState(null);
+  const [evalLoading, setEvalLoading] = useState(false);
+
+  const chatEndRef = useRef(null);
   const { speak, stop, speaking } = useTTS();
   const { recording, supported: micOk, startRec, stopRec } = useSTT();
 
   useEffect(() => {
-    if (phase === "practice" && questions[currentQ]) {
-      const t = setTimeout(() => speak(questions[currentQ].q), 500);
-      return () => clearTimeout(t);
-    }
-  }, [phase, currentQ]); // eslint-disable-line
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [displayMessages, aiThinking]);
 
-  /* ── GENERATE ── */
-  const generateQuestions = async () => {
-    if (!jobRole.trim() || !jdText.trim()) return;
-    setGenLoading(true);
-    setGenErr("");
-    const angles = [...ANGLES].sort(() => Math.random() - 0.5).slice(0, 4);
-    const seed = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const avoidSection = usedQs.length
-      ? `\n\nYA USADAS (NO repitas ni similares):\n${usedQs.map((q, i) => `${i + 1}. ${q}`).join("\n")}`
-      : "";
-    const system =
-      `Eres un experto en RRHH. Genera preguntas de entrevista ÚNICAS y ESPECÍFICAS para el puesto y empresa indicados. ` +
-      `NUNCA uses preguntas genéricas como "háblame de ti" o "cuál es tu fortaleza". ` +
-      `Responde ÚNICAMENTE con JSON válido sin texto extra ni markdown:\n` +
-      `{"preguntas":[{"q":"pregunta","tip":"qué busca el entrevistador en una frase corta"}]}`;
-    const user =
-      `Puesto: ${jobRole}\nEmpresa: ${company || "no especificada"}\n` +
-      `Descripción:\n${jdText}\n\n` +
-      `Sesión ID: ${seed} | Genera exactamente ${numQ} preguntas frescas.\n` +
-      `Ángulos para ESTA sesión: ${angles.join(" | ")}\n` +
-      `Las preguntas deben mencionar detalles reales de la descripción del trabajo.` +
-      avoidSection;
+  const buildSystem = useCallback(() =>
+    `Eres un entrevistador de RRHH profesional para el puesto de "${jobRole}" en ${company || "nuestra empresa"}.
+Descripción del puesto: ${jdText}
+
+INSTRUCCIONES:
+- Al recibir [INICIAR]: preséntate brevemente en 1 oración y haz tu primera pregunta específica al puesto
+- Tras cada respuesta del candidato: reacciona brevemente (máx 1 oración) y haz la siguiente pregunta
+- Debes hacer exactamente ${numQ} preguntas en total, específicas y basadas en la descripción del puesto
+- Cuando el candidato haya respondido tu pregunta número ${numQ}: agradece, cierra la entrevista con amabilidad e incluye exactamente "|||FIN|||" al final de tu mensaje de cierre
+- Habla siempre en español, sé profesional y conciso (máx 4 oraciones por turno)
+- NO evalúes ni des feedback durante la entrevista — solo conduce la conversación naturalmente`,
+    [jobRole, company, jdText, numQ]
+  );
+
+  /* ── START INTERVIEW ── */
+  const startInterview = async () => {
+    setStartLoading(true);
+    setStartErr("");
+    const trigger = [{ role: "user", content: "[INICIAR]" }];
     try {
-      const raw = await callClaude(system, user);
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("No JSON in response");
-      const parsed = JSON.parse(match[0]);
-      const newQs = parsed.preguntas || [];
-      if (!newQs.length) throw new Error("No se recibieron preguntas");
-      setQuestions(newQs);
-      setUsedQs(prev => [...prev, ...newQs.map(q => q.q)]);
-      setPhase("practice");
-      setCurrentQ(0); setAnswer(""); setFeedback(null); setFbErr(""); setAllResults([]);
+      const text = await callAI(buildSystem(), trigger);
+      setApiMessages([...trigger, { role: "assistant", content: text }]);
+      setDisplayMessages([{ role: "assistant", content: text }]);
+      setPhase("interview");
+      speak(text);
     } catch (e) {
-      setGenErr("Error generando preguntas: " + e.message + ". Intenta de nuevo.");
+      setStartErr("Error al iniciar: " + e.message);
     }
-    setGenLoading(false);
+    setStartLoading(false);
   };
 
-  /* ── EVALUATE ── */
-  const evaluate = async () => {
-    if (!answer.trim()) return;
-    stop();
-    setEvalLoading(true);
-    setFbErr("");
-    const system =
-      `Eres coach de entrevistas. Evalúa la respuesta del candidato para el puesto indicado. ` +
-      `Responde ÚNICAMENTE con JSON válido sin texto extra ni markdown:\n` +
-      `{"claridad":85,"relevancia":70,"confianza":90,"resumen":"frase evaluando la respuesta","fortalezas":["punto1","punto2"],"mejoras":["punto1","punto2"],"version_ideal":"cómo debería responder idealmente en 3-4 oraciones"}`;
-    const user =
-      `Puesto: ${jobRole} en ${company}\nDescripción: ${jdText}\n` +
-      `Pregunta: ${questions[currentQ].q}\nRespuesta: ${answer}`;
+  /* ── SEND MESSAGE ── */
+  const sendMessage = async (text) => {
+    const trimmed = text.trim();
+    if (!trimmed || aiThinking) return;
+    stop(); stopRec();
+
+    const userMsg = { role: "user", content: trimmed };
+    const newApi = [...apiMessages, userMsg];
+    setApiMessages(newApi);
+    setDisplayMessages(prev => [...prev, userMsg]);
+    setInputText("");
+    setAiThinking(true);
+    setInterviewErr("");
+
     try {
-      const raw = await callClaude(system, user);
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("No JSON in response");
-      const fb = JSON.parse(match[0]);
-      setFeedback(fb);
-      setAllResults(prev => [...prev, { q: questions[currentQ].q, answer, feedback: fb }]);
+      const raw = await callAI(buildSystem(), newApi);
+      const isEnd = raw.includes("|||FIN|||");
+      const cleanText = raw.replace("|||FIN|||", "").trim();
+      const aiMsg = { role: "assistant", content: cleanText };
+
+      setApiMessages([...newApi, { role: "assistant", content: raw }]);
+      setDisplayMessages(prev => [...prev, aiMsg]);
+      speak(cleanText);
+
+      if (isEnd) {
+        setTimeout(() => finishInterview([...newApi, aiMsg]), 2500);
+      }
     } catch (e) {
-      setFbErr("No se pudo evaluar: " + e.message + ". Intenta de nuevo.");
+      setInterviewErr("Error: " + e.message + ". Intenta de nuevo.");
+    }
+    setAiThinking(false);
+  };
+
+  /* ── FINISH & EVALUATE ── */
+  const finishInterview = async (history) => {
+    setPhase("done");
+    setEvalLoading(true);
+
+    const transcript = history
+      .filter(m => m.content !== "[INICIAR]")
+      .map(m => `${m.role === "assistant" ? "Entrevistador" : "Candidato"}: ${m.content}`)
+      .join("\n\n");
+
+    const evalSystem =
+      `Eres un coach de entrevistas. Analiza esta entrevista y evalúa al candidato para el puesto de "${jobRole}".
+Responde ÚNICAMENTE con JSON válido sin texto extra:
+{"puntaje":75,"nivel":"Buen candidato","fortalezas":["punto1","punto2","punto3"],"mejoras":["punto1","punto2"],"recomendacion":"consejo final en 1-2 oraciones"}`;
+
+    try {
+      const raw = await callAI(evalSystem, [{ role: "user", content: transcript }], 600);
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) setEvaluation(JSON.parse(match[0]));
+    } catch (e) {
+      console.warn("Evaluation failed:", e);
     }
     setEvalLoading(false);
   };
 
-  const nextQ = () => {
-    stop(); stopRec();
-    if (currentQ + 1 >= questions.length) setPhase("done");
-    else { setCurrentQ(p => p + 1); setAnswer(""); setFeedback(null); setFbErr(""); }
+  const toggleMic = () => {
+    if (recording) {
+      stopRec();
+    } else {
+      setInputText("");
+      startRec(chunk => setInputText(prev => prev + chunk));
+    }
   };
 
   const restart = () => {
     stop(); stopRec();
     setPhase("setup");
     setJobRole(""); setCompany(""); setJdText("");
-    setQuestions([]); setUsedQs([]);
-    setCurrentQ(0); setAnswer(""); setFeedback(null); setFbErr(""); setAllResults([]);
+    setApiMessages([]); setDisplayMessages([]);
+    setInputText(""); setEvaluation(null);
+    setStartErr(""); setInterviewErr("");
   };
 
-  const toggleMic = () => {
-    if (recording) { stopRec(); }
-    else { setAnswer(""); startRec(chunk => setAnswer(prev => prev + chunk)); }
-  };
-
-  const copyText = (text, id) => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(id); setTimeout(() => setCopied(null), 2000);
-  };
-
-  const avgScore = allResults.length
-    ? Math.round(allResults.reduce((a, r) => a + (r.feedback.claridad + r.feedback.relevancia + r.feedback.confianza) / 3, 0) / allResults.length)
-    : 0;
-
-  const pi = phase === "setup" ? 0 : phase === "practice" ? 1 : 2;
+  const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
 
   return (
     <>
@@ -352,11 +326,11 @@ export default function App() {
         <div className="hd">
           <div className="hd-tag">// AI Interview Trainer · con voz</div>
           <div className="hd-title">Practica para el trabajo que quieres</div>
-          <div className="hd-sub">Pega la descripción real → escucha las preguntas → recibe feedback con IA</div>
+          <div className="hd-sub">Conversación real con un entrevistador de IA</div>
         </div>
 
         <div className="steps">
-          {[["Tu trabajo", 1], ["Practica", 2], ["Resultados", 3]].map(([lbl, n], i) => (
+          {[["Tu trabajo", 1], ["Entrevista", 2], ["Resultados", 3]].map(([lbl, n], i) => (
             <div key={n} className={`step-btn${i < pi ? " done" : i === pi ? " active" : ""}`}>
               <div className="step-num">{i < pi ? "✓" : n}</div>
               {lbl}
@@ -368,7 +342,7 @@ export default function App() {
         {phase === "setup" && (
           <div className="card" key="setup">
             <div className="card-title">¿A qué trabajo quieres aplicar?</div>
-            <div className="card-desc">Pega la descripción real del anuncio. La IA generará preguntas específicas para ese puesto.</div>
+            <div className="card-desc">Pega la descripción real del anuncio y practica con un entrevistador de IA en conversación real.</div>
             <div className="row">
               <div className="field">
                 <label>Puesto</label>
@@ -405,22 +379,22 @@ export default function App() {
                 <option value="10">10 — Intensivo</option>
               </select>
             </div>
-            <button className="btn" onClick={generateQuestions} disabled={genLoading || !jobRole.trim() || !jdText.trim()}>
-              {genLoading ? "Generando preguntas..." : "Empezar entrevista →"}
+            <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
+              {startLoading ? "Preparando entrevistador..." : "Iniciar entrevista →"}
             </button>
-            {genLoading && (
+            {startLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Creando preguntas para {company || "tu empresa"}...
+                Preparando tu entrevistador de IA...
               </div>
             )}
-            {genErr && <div className="err-box">{genErr}</div>}
+            {startErr && <div className="err-box">{startErr}</div>}
           </div>
         )}
 
-        {/* ── PRACTICE ── */}
-        {phase === "practice" && questions[currentQ] && (
-          <div className="card" key={`q${currentQ}`}>
+        {/* ── INTERVIEW ── */}
+        {phase === "interview" && (
+          <div className="card" key="interview">
             <div className="job-chip">
               <div className="job-icon">💼</div>
               <div>
@@ -428,123 +402,55 @@ export default function App() {
                 <div className="job-role">{jobRole}</div>
               </div>
             </div>
-            <div className="q-progress">
-              <span>Pregunta {currentQ + 1} de {questions.length}</span>
-              <span style={{ color: "#3030a0" }}>{Math.round((currentQ / questions.length) * 100)}% completado</span>
-            </div>
-            <div className="q-bar-bg">
-              <div className="q-bar-fill" style={{ width: `${((currentQ + 1) / questions.length) * 100}%` }} />
-            </div>
-            <div className="q-num">Pregunta {currentQ + 1}</div>
-            <div className="q-text">{questions[currentQ].q}</div>
-            <div className="voice-q-bar">
-              <button className={`speak-btn${speaking ? " speaking" : ""}`} onClick={() => speaking ? stop() : speak(questions[currentQ].q)}>
-                {speaking ? "⏹" : "▶"}
-              </button>
-              <span className={`speak-label${speaking ? " on" : ""}`}>
-                {speaking ? "Leyendo pregunta..." : "Toca para escuchar la pregunta"}
-              </span>
-            </div>
-            {questions[currentQ].tip && (
-              <div className="tip-box">
-                <strong>💡 Qué busca el entrevistador:</strong> {questions[currentQ].tip}
-              </div>
-            )}
-            {!feedback && (
-              <>
-                <div className="mode-toggle">
-                  <button className={`mode-pill${answerMode === "voice" ? " active" : ""}`} onClick={() => setAnswerMode("voice")}>
-                    🎤 Responder con voz
-                  </button>
-                  <button className={`mode-pill${answerMode === "text" ? " active" : ""}`} onClick={() => setAnswerMode("text")}>
-                    ✍️ Escribir respuesta
-                  </button>
+
+            <div className="chat-area">
+              {displayMessages.map((msg, i) => (
+                <div key={i} className={`msg msg-${msg.role === "assistant" ? "ai" : "user"}`}>
+                  {msg.role === "assistant" && <div className="avatar">🎙</div>}
+                  <div className={`bubble bubble-${msg.role === "assistant" ? "ai" : "user"}`}>
+                    {msg.content}
+                  </div>
                 </div>
-                {answerMode === "voice" && (
-                  <div className="mic-area">
-                    {recording && (
-                      <div className="voice-wave">
-                        {[1,2,3,4,5,6,7].map(i => <div key={i} className="wave-bar" />)}
-                      </div>
-                    )}
-                    <button className={`mic-btn${recording ? " rec" : ""}`} onClick={toggleMic}>
-                      {recording ? "⏹" : "🎤"}
-                    </button>
-                    <div className={`mic-status${recording ? " on" : ""}`}>
-                      {!micOk
-                        ? "Tu navegador no soporta micrófono — usa el modo texto"
-                        : recording ? "Grabando... toca para detener"
-                        : answer ? "Grabación lista — puedes seguir o evaluar"
-                        : "Toca el micrófono y responde como en la entrevista real"}
-                    </div>
-                    {answer && (
-                      <div className="transcript-box">
-                        <div className="transcript-label">Lo que dijiste:</div>
-                        {answer}
-                      </div>
-                    )}
+              ))}
+              {aiThinking && (
+                <div className="msg msg-ai">
+                  <div className="avatar">🎙</div>
+                  <div className="bubble bubble-ai thinking">
+                    <div className="t-dot" /><div className="t-dot" /><div className="t-dot" />
                   </div>
-                )}
-                {answerMode === "text" && (
-                  <div className="field">
-                    <label>Tu respuesta</label>
-                    <textarea rows={5} placeholder="Responde como si estuvieras en la entrevista real..." value={answer} onChange={e => setAnswer(e.target.value)} />
-                  </div>
-                )}
-                <button className="btn" onClick={evaluate} disabled={evalLoading || !answer.trim()}>
-                  {evalLoading ? "Evaluando..." : "Ver feedback →"}
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="speak-indicator">
+              {speaking ? "🔊 Entrevistador hablando..." : recording ? "🔴 Grabando — toca detener y luego enviar" : ""}
+            </div>
+
+            {interviewErr && <div className="err-box">{interviewErr}</div>}
+
+            <div className="chat-input-bar">
+              {micOk && (
+                <button className={`mic-sm${recording ? " rec" : ""}`} onClick={toggleMic} disabled={aiThinking}>
+                  {recording ? "⏹" : "🎤"}
                 </button>
-                {evalLoading && (
-                  <div className="loader">
-                    <div className="dot" /><div className="dot" /><div className="dot" />
-                    Analizando tu respuesta...
-                  </div>
-                )}
-                {fbErr && <div className="err-box">{fbErr}</div>}
-              </>
-            )}
-            {feedback && (
-              <div style={{ animation: "fadeUp .3s ease" }}>
-                <div className="score-row">
-                  {[["claridad","Claridad"],["relevancia","Relevancia"],["confianza","Confianza"]].map(([k, l]) => (
-                    <div className="score-pill" key={k}>
-                      <div className={`score-n ${SC(feedback[k])}`}>{feedback[k]}</div>
-                      <div className="score-l">{l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="fb">
-                  <div className="fb-head">Diagnóstico</div>
-                  <div className="fb-body">
-                    {feedback.resumen && <div style={{ marginBottom: 12, color: "#aaa", fontStyle: "italic" }}>{feedback.resumen}</div>}
-                    {feedback.fortalezas?.map((f, i) => (
-                      <div className="li" key={i}><span className="li-dot" style={{ color: "#4ecc96" }}>✓</span>{f}</div>
-                    ))}
-                    {feedback.mejoras?.map((m, i) => (
-                      <div className="li" key={i}><span className="li-dot" style={{ color: "#f06060" }}>→</span>{m}</div>
-                    ))}
-                  </div>
-                </div>
-                <div className="fb">
-                  <div className="fb-head">
-                    <span>★ Respuesta ideal para {company}</span>
-                    <div className="fb-actions">
-                      <button className="copy-btn" onClick={() => speak(feedback.version_ideal)}>🔊 Escuchar</button>
-                      <button className="copy-btn" onClick={() => copyText(feedback.version_ideal, "ideal")}>
-                        {copied === "ideal" ? "✓ Copiado" : "Copiar"}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="fb-body">{feedback.version_ideal}</div>
-                </div>
-                <div className="nav-btns">
-                  {currentQ + 1 < questions.length
-                    ? <button className="btn" onClick={nextQ}>Siguiente pregunta →</button>
-                    : <button className="btn" onClick={() => setPhase("done")}>Ver resultados finales →</button>
-                  }
-                </div>
-              </div>
-            )}
+              )}
+              <input
+                className="chat-input"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
+                placeholder={aiThinking ? "Entrevistador respondiendo..." : "Tu respuesta..."}
+                disabled={aiThinking}
+              />
+              <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>
+                ➤
+              </button>
+            </div>
+
+            <button className="end-btn" onClick={() => finishInterview(apiMessages)}>
+              Terminar entrevista y ver resultados
+            </button>
           </div>
         )}
 
@@ -553,35 +459,51 @@ export default function App() {
           <div className="card" key="done">
             <div className="card-title">Entrevista completada 🎉</div>
             <div className="card-desc" style={{ marginBottom: 20 }}>
-              Resultados para <strong style={{ color: "#eeeeff" }}>{jobRole}</strong> en {company || "tu empresa objetivo"}
+              Evaluación para <strong style={{ color: "#eeeeff" }}>{jobRole}</strong>{company ? ` en ${company}` : ""}
             </div>
-            {avgScore > 0 && (() => {
-              const { label, cls } = AVG_LBL(avgScore);
-              return (
-                <div className="summary-bar">
-                  <div className={`summary-ring ${cls}`}>{avgScore}</div>
-                  <div><div className="summary-label">Puntaje promedio</div><div className="summary-val">{label}</div></div>
-                </div>
-              );
-            })()}
-            {allResults.map((r, i) => (
-              <div className="fb" key={i} style={{ marginBottom: 14 }}>
-                <div className="fb-head">
-                  <span>P{i + 1}: {r.q.slice(0, 55)}{r.q.length > 55 ? "…" : ""}</span>
-                  <span style={{ color: "#4ecc96", fontWeight: 800 }}>
-                    {Math.round((r.feedback.claridad + r.feedback.relevancia + r.feedback.confianza) / 3)}
-                  </span>
-                </div>
-                <div className="fb-body">
-                  <div style={{ color: "#555", marginBottom: 8, fontStyle: "italic" }}>{r.feedback.resumen}</div>
-                  {r.feedback.mejoras?.map((m, j) => (
-                    <div className="li" key={j}><span className="li-dot" style={{ color: "#f06060" }}>→</span>{m}</div>
-                  ))}
-                </div>
+
+            {evalLoading && (
+              <div className="loader">
+                <div className="dot" /><div className="dot" /><div className="dot" />
+                Analizando tu desempeño...
               </div>
-            ))}
-            <button className="btn" onClick={generateQuestions} disabled={genLoading}>
-              {genLoading ? "Generando..." : "Repetir con nuevas preguntas →"}
+            )}
+
+            {evaluation && (
+              <>
+                <div className="summary-bar">
+                  <div className={`summary-ring ${SC(evaluation.puntaje)}`}>{evaluation.puntaje}</div>
+                  <div>
+                    <div className="summary-label">Puntaje general</div>
+                    <div className="summary-val">{evaluation.nivel}</div>
+                  </div>
+                </div>
+                <div className="fb">
+                  <div className="fb-head">Fortalezas</div>
+                  <div className="fb-body">
+                    {evaluation.fortalezas?.map((f, i) => (
+                      <div className="li" key={i}><span className="li-dot" style={{ color: "#4ecc96" }}>✓</span>{f}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="fb">
+                  <div className="fb-head">Áreas de mejora</div>
+                  <div className="fb-body">
+                    {evaluation.mejoras?.map((m, i) => (
+                      <div className="li" key={i}><span className="li-dot" style={{ color: "#f06060" }}>→</span>{m}</div>
+                    ))}
+                  </div>
+                </div>
+                {evaluation.recomendacion && (
+                  <div className="tip-box" style={{ marginBottom: 20 }}>
+                    💡 {evaluation.recomendacion}
+                  </div>
+                )}
+              </>
+            )}
+
+            <button className="btn" onClick={startInterview} disabled={startLoading}>
+              {startLoading ? "Preparando..." : "Repetir entrevista →"}
             </button>
             <button className="btn-ghost" onClick={restart}>Practicar para otro trabajo</button>
           </div>
