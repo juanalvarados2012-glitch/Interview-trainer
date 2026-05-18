@@ -68,6 +68,17 @@ const css = `
   .url-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px}
   .url-divider-line{flex:1;height:1px;background:#1a1a30}
   .url-divider-text{font-family:'DM Mono',monospace;font-size:.68rem;color:#333;text-transform:uppercase;letter-spacing:.08em}
+  .diff-row{display:flex;gap:8px;margin-bottom:20px}
+  .diff-pill{flex:1;padding:12px 8px;border-radius:12px;border:1px solid #1a1a30;background:transparent;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+  .diff-pill:hover:not(.active){border-color:#2a2a50}
+  .diff-pill.easy{color:#4ecc96}.diff-pill.easy.active{background:#0a1a12;border-color:#4ecc9660}
+  .diff-pill.medium{color:#f0c060}.diff-pill.medium.active{background:#1a1400;border-color:#f0c06060}
+  .diff-pill.hard{color:#f06060}.diff-pill.hard.active{background:#1a0808;border-color:#f0606060}
+  .diff-sub{font-size:.62rem;font-weight:400;opacity:.7;margin-top:2px}
+  .diff-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-family:'DM Mono',monospace;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .diff-badge.easy{background:#0a1a12;color:#4ecc96;border:1px solid #4ecc9640}
+  .diff-badge.medium{background:#1a1400;color:#f0c060;border:1px solid #f0c06040}
+  .diff-badge.hard{background:#1a0808;color:#f06060;border:1px solid #f0606040}
   /* ── CHAT ── */
   .chat-area{height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
   .chat-area::-webkit-scrollbar{width:3px}
@@ -200,6 +211,7 @@ export default function App() {
   const [company, setCompany] = useState("");
   const [jdText, setJdText] = useState("");
   const [numQ, setNumQ] = useState("5");
+  const [difficulty, setDifficulty] = useState("medium");
   const [startLoading, setStartLoading] = useState(false);
   const [startErr, setStartErr] = useState("");
   const [jobUrl, setJobUrl] = useState("");
@@ -227,26 +239,48 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages, aiThinking]);
 
-  const buildSystem = useCallback(() =>
-    `You are Jordan Mills, a Senior Talent Acquisition Manager at ${company || "the company"}, conducting a real job interview for the ${jobRole} position.
-Job description: ${jdText}
+  const DIFFICULTY_CONFIG = {
+    easy: {
+      name: "Sam Rivera",
+      title: "HR Coordinator",
+      label: "Easy",
+      emoji: "🟢",
+      persona: `You are Sam Rivera, a friendly HR Coordinator at ${company || "the company"}. You genuinely want to help candidates succeed and feel comfortable.
+YOUR STYLE: Warm, encouraging, patient. You give positive reinforcement often. You accept answers that show general relevant experience even without perfect specifics. You ask gentle follow-ups like "That's interesting — could you tell me a bit more about that?" You rarely push back hard; if an answer is weak, you give a hint: "Maybe think of a specific time when..." You celebrate good answers enthusiastically.`,
+    },
+    medium: {
+      name: "Jordan Mills",
+      title: "Senior Talent Acquisition Manager",
+      label: "Standard",
+      emoji: "🟡",
+      persona: `You are Jordan Mills, a Senior Talent Acquisition Manager at ${company || "the company"}. Professional and fair.
+YOUR STYLE: Balanced and professional. You acknowledge strong answers genuinely. You probe decent answers once for specifics. You don't accept vague non-answers but you're not harsh about it. You feel like a real workplace interview.`,
+    },
+    hard: {
+      name: "Morgan Price",
+      title: "VP of Talent & Strategy",
+      label: "Hard",
+      emoji: "🔴",
+      persona: `You are Morgan Price, VP of Talent & Strategy at ${company || "the company"}. You only hire the top 5% and your interviews are known to be tough.
+YOUR STYLE: Direct, skeptical, demanding. You challenge almost every answer — even good ones — to test how candidates handle pressure. You ask for specific metrics, numbers, and outcomes. If they can't give you data, you push: "What was the actual impact? What were the numbers?" You frequently ask "Why?" and "So what?" after answers. You're not mean but you're relentless. Weak answers get responses like "I've heard that before — give me something specific that sets you apart."`,
+    },
+  };
 
-YOUR PERSONALITY: Professional, warm, genuinely curious. You've done hundreds of interviews. You're not trying to trick the candidate — you want to find out if they're the right fit.
+  const buildSystem = useCallback(() => {
+    const cfg = DIFFICULTY_CONFIG[difficulty];
+    return `${cfg.persona}
 
-HOW TO RUN THIS INTERVIEW:
-- When you receive [START]: greet the candidate by name (call them "you" naturally), briefly mention you're excited to learn more about them, and open with a natural first question tied directly to the job description.
-- Ask exactly ${numQ} main questions total, each grounded in the actual job description provided.
-- After each answer, react LIKE A REAL HUMAN INTERVIEWER:
-  * STRONG answer (specific, detailed, has a real example): acknowledge it genuinely ("That's a great example", "I really like how you approached that") then smoothly transition to the next question.
-  * DECENT answer (relevant but surface-level): ask one natural follow-up to dig deeper ("What were the results of that?", "Walk me through how you handled the pushback", "How did that affect the team?").
-  * WEAK answer (vague, no examples, very short): don't accept it. Redirect naturally: "I'd love to hear a specific situation where you did that — can you think of one?" or "Can you be more concrete? What exactly did you do?"
-  * ONE-WORD or NON-ANSWER: be direct but not harsh: "I need a bit more to work with here — can you give me an actual example?"
-- Max 2 follow-up questions per main question before moving on regardless.
-- Vary your reactions — don't start every response the same way. Sound human.
-- Keep your turns SHORT: 1-3 sentences max. This is a conversation, not a lecture.
-- When the candidate has answered all ${numQ} main questions satisfactorily: wrap up naturally. Thank them, mention the hiring team will follow up, wish them well — then add exactly "|||END|||" at the very end of your message (hidden from display).`,
-    [jobRole, company, jdText, numQ]
-  );
+Job description for ${jobRole}: ${jdText}
+
+INTERVIEW RULES (follow strictly):
+- When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
+- Ask exactly ${numQ} main questions, each specific to the actual job description above.
+- React to answers according to your personality style above.
+- Max 2 follow-up questions per main question before moving on.
+- Keep your turns SHORT: 1-3 sentences. This is a conversation.
+- Vary how you start each response — don't repeat the same opener.
+- When all ${numQ} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
+  }, [jobRole, company, jdText, numQ, difficulty]);
 
   /* ── SCRAPE JOB URL ── */
   const scrapeJob = async () => {
@@ -398,7 +432,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
   const restart = () => {
     stop(); stopRec();
     setPhase("setup");
-    setJobRole(""); setCompany(""); setJdText("");
+    setJobRole(""); setCompany(""); setJdText(""); setDifficulty("medium");
     setApiMessages([]); setDisplayMessages([]);
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
@@ -494,6 +528,25 @@ Respond ONLY with valid JSON, no extra text or markdown:
                 <option value="10">10 — Intensive</option>
               </select>
             </div>
+            <div className="field">
+              <label>Difficulty</label>
+              <div className="diff-row">
+                {[
+                  { key: "easy",   emoji: "🟢", label: "Easy",     sub: "Encouraging" },
+                  { key: "medium", emoji: "🟡", label: "Standard", sub: "Balanced"    },
+                  { key: "hard",   emoji: "🔴", label: "Hard",     sub: "Relentless"  },
+                ].map(({ key, emoji, label, sub }) => (
+                  <button
+                    key={key}
+                    className={`diff-pill ${key}${difficulty === key ? " active" : ""}`}
+                    onClick={() => setDifficulty(key)}
+                  >
+                    {emoji} {label}
+                    <div className="diff-sub">{sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
             <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
               {startLoading ? "Preparing interviewer..." : "Start interview →"}
             </button>
@@ -512,10 +565,13 @@ Respond ONLY with valid JSON, no extra text or markdown:
           <div className="card" key="interview">
             <div className="job-chip">
               <div className="job-icon">💼</div>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div className="job-company">{company || "Company"}</div>
                 <div className="job-role">{jobRole}</div>
               </div>
+              {(() => { const cfg = DIFFICULTY_CONFIG[difficulty]; return (
+                <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {cfg.label}</span>
+              ); })()}
             </div>
 
             <div className="chat-area">
