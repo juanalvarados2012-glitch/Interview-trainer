@@ -80,6 +80,9 @@ const css = `
   .bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-family:'DM Mono',monospace;font-size:.82rem;line-height:1.55}
   .bubble-ai{background:#0d0d20;border:1px solid #1a1a35;border-top-left-radius:4px;color:#ccc}
   .bubble-user{background:#20208a;border:1px solid #3030b0;border-top-right-radius:4px;color:#eeeeff}
+  .coach-tip{max-width:85%;margin-left:auto;margin-top:-4px;margin-bottom:2px;background:#0a0a1a;border:1px solid #2a2050;border-radius:10px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:.72rem;color:#7060aa;line-height:1.5;animation:fadeUp .3s ease}
+  .coach-tip-label{font-size:.62rem;color:#4030a0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .coach-tip-loading{color:#3030a0;font-size:.68rem;font-family:'DM Mono',monospace;text-align:right;padding:2px 0}
   .thinking{display:flex;gap:4px;align-items:center}
   .t-dot{width:5px;height:5px;background:#4040c0;border-radius:50%;animation:bounce 1.2s infinite}
   .t-dot:nth-child(2){animation-delay:.2s}.t-dot:nth-child(3){animation-delay:.4s}
@@ -209,6 +212,8 @@ export default function App() {
   const [inputText, setInputText] = useState("");
   const [aiThinking, setAiThinking] = useState(false);
   const [interviewErr, setInterviewErr] = useState("");
+  const [tips, setTips] = useState({});
+  const [loadingTips, setLoadingTips] = useState({});
 
   // Results
   const [evaluation, setEvaluation] = useState(null);
@@ -282,6 +287,23 @@ HOW TO RUN THIS INTERVIEW:
     setStartLoading(false);
   };
 
+  /* ── COACH TIP ── */
+  const fetchTip = async (question, answer, msgIndex) => {
+    setLoadingTips(prev => ({ ...prev, [msgIndex]: true }));
+    const coachSystem =
+      `You are a concise interview coach giving real-time feedback. The candidate just answered an interview question.
+Respond in exactly 2 sentences: first, one thing they did well (or acknowledge if it was weak); second, the single most impactful improvement they could make to that specific answer.
+Be specific to what they actually said — don't give generic advice. No bullet points, no headers, just 2 sentences.`;
+    try {
+      const tip = await callAI(coachSystem, [{
+        role: "user",
+        content: `Question: ${question}\n\nCandidate's answer: ${answer}`,
+      }], 150);
+      setTips(prev => ({ ...prev, [msgIndex]: tip.trim() }));
+    } catch (_) {}
+    setLoadingTips(prev => ({ ...prev, [msgIndex]: false }));
+  };
+
   /* ── SEND MESSAGE ── */
   const sendMessage = async (text) => {
     const trimmed = text.trim();
@@ -290,27 +312,33 @@ HOW TO RUN THIS INTERVIEW:
 
     const userMsg = { role: "user", content: trimmed };
     const newApi = [...apiMessages, userMsg];
+    const userMsgIndex = displayMessages.length;
     setApiMessages(newApi);
     setDisplayMessages(prev => [...prev, userMsg]);
     setInputText("");
     setAiThinking(true);
     setInterviewErr("");
 
-    try {
-      const raw = await callAI(buildSystem(), newApi);
+    // Find last interviewer question to give context to the coach
+    const lastQuestion = [...displayMessages].reverse().find(m => m.role === "assistant")?.content || "";
+
+    // Fire interviewer + coach tip in parallel
+    const [interviewerResult] = await Promise.allSettled([
+      callAI(buildSystem(), newApi),
+      fetchTip(lastQuestion, trimmed, userMsgIndex),
+    ]);
+
+    if (interviewerResult.status === "fulfilled") {
+      const raw = interviewerResult.value;
       const isEnd = raw.includes("|||END|||");
       const cleanText = raw.replace("|||END|||", "").trim();
       const aiMsg = { role: "assistant", content: cleanText };
-
       setApiMessages([...newApi, { role: "assistant", content: raw }]);
       setDisplayMessages(prev => [...prev, aiMsg]);
       speak(cleanText);
-
-      if (isEnd) {
-        setTimeout(() => finishInterview([...newApi, aiMsg]), 2500);
-      }
-    } catch (e) {
-      setInterviewErr("Error: " + e.message + ". Please try again.");
+      if (isEnd) setTimeout(() => finishInterview([...newApi, aiMsg]), 2500);
+    } else {
+      setInterviewErr("Error: " + interviewerResult.reason?.message + ". Please try again.");
     }
     setAiThinking(false);
   };
@@ -374,6 +402,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setApiMessages([]); setDisplayMessages([]);
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
+    setTips({}); setLoadingTips({});
   };
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
@@ -491,11 +520,22 @@ Respond ONLY with valid JSON, no extra text or markdown:
 
             <div className="chat-area">
               {displayMessages.map((msg, i) => (
-                <div key={i} className={`msg msg-${msg.role === "assistant" ? "ai" : "user"}`}>
-                  {msg.role === "assistant" && <div className="avatar">🎙</div>}
-                  <div className={`bubble bubble-${msg.role === "assistant" ? "ai" : "user"}`}>
-                    {msg.content}
+                <div key={i}>
+                  <div className={`msg msg-${msg.role === "assistant" ? "ai" : "user"}`}>
+                    {msg.role === "assistant" && <div className="avatar">🎙</div>}
+                    <div className={`bubble bubble-${msg.role === "assistant" ? "ai" : "user"}`}>
+                      {msg.content}
+                    </div>
                   </div>
+                  {msg.role === "user" && loadingTips[i] && (
+                    <div className="coach-tip-loading">💬 coach analyzing...</div>
+                  )}
+                  {msg.role === "user" && tips[i] && (
+                    <div className="coach-tip">
+                      <div className="coach-tip-label">💬 Coach tip</div>
+                      {tips[i]}
+                    </div>
+                  )}
                 </div>
               ))}
               {aiThinking && (
