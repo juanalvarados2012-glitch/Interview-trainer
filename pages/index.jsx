@@ -189,6 +189,7 @@ function useTTS() {
   const [speaking, setSpeaking] = useState(false);
   const voicesRef = useRef([]);
 
+  // Cache voices as soon as they're available
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const load = () => {
@@ -200,11 +201,21 @@ function useTTS() {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
+  // Call this SYNCHRONOUSLY inside a click handler before any async work.
+  // It speaks an empty utterance then immediately cancels it, which "unlocks"
+  // the speech synthesis context so later async speak() calls are allowed by Chrome.
+  const unlock = useCallback(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const dummy = new SpeechSynthesisUtterance("");
+    window.speechSynthesis.speak(dummy);
+    window.speechSynthesis.cancel();
+  }, []);
+
   const speak = useCallback((text) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const go = () => {
       window.speechSynthesis.cancel();
-      window.speechSynthesis.resume(); // Chrome silently pauses synthesis — force resume
+      window.speechSynthesis.resume(); // unfreeze Chrome pause bug
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = "en-US";
       utt.rate = 0.9;
@@ -218,13 +229,13 @@ function useTTS() {
       utt.onstart = () => setSpeaking(true);
       utt.onend = () => setSpeaking(false);
       utt.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(utt);
+      // Small delay gives Chrome time to settle after cancel()
+      setTimeout(() => window.speechSynthesis.speak(utt), 80);
     };
 
     if (voicesRef.current.length > 0) {
       go();
     } else {
-      // Voices not cached yet — wait, but only invoke once (guard against double-fire)
       let done = false;
       const runOnce = () => { if (done) return; done = true; go(); };
       const onChanged = () => {
@@ -242,7 +253,7 @@ function useTTS() {
     setSpeaking(false);
   }, []);
 
-  return { speak, stop, speaking };
+  return { speak, stop, speaking, unlock };
 }
 
 /* ── STT ─────────────────────────────────────────────────────── */
@@ -320,7 +331,7 @@ export default function App() {
   const [evalLoading, setEvalLoading] = useState(false);
 
   const chatEndRef = useRef(null);
-  const { speak, stop, speaking } = useTTS();
+  const { speak, stop, speaking, unlock } = useTTS();
   const { recording, supported: micOk, startRec, stopRec } = useSTT();
 
   useEffect(() => {
@@ -394,6 +405,7 @@ INTERVIEW RULES (follow strictly):
 
   /* ── START INTERVIEW ── */
   const startInterview = async () => {
+    unlock(); // prime synthesis context synchronously before async work
     setStartLoading(true);
     setStartErr("");
     setTips({}); setLoadingTips({});
@@ -436,6 +448,7 @@ Be specific to what they actually said — don't give generic advice. No bullet 
   const sendMessage = async (text) => {
     const trimmed = text.trim();
     if (!trimmed || aiThinking) return;
+    unlock(); // prime synthesis context synchronously before async work
     stop(); stopRec();
 
     const userMsg = { role: "user", content: trimmed };
