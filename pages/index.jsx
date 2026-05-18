@@ -1,8 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const STRIPE_ENABLED = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -27,16 +25,17 @@ const css = `
   h1{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:24px;max-width:820px}
   .gradient-text{background:linear-gradient(135deg,#eeeeff 0%,#8080ff 50%,#4040cc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   .hero-sub{font-family:'DM Mono',monospace;font-size:clamp(.85rem,2vw,1rem);color:#555;line-height:1.7;max-width:560px;margin-bottom:40px}
-  .hero-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:56px}
-  .btn-primary{padding:15px 36px;border-radius:12px;background:linear-gradient(135deg,#2020a0,#5050dd);color:#fff;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;text-decoration:none;transition:all .2s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .hero-btns{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:24px;width:100%;max-width:400px}
+  .btn-primary{width:100%;padding:16px 32px;border-radius:12px;background:linear-gradient(135deg,#2020a0,#5050dd);color:#fff;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;text-decoration:none;transition:all .2s;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
   .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px #3030a040}
-  .btn-secondary{padding:15px 36px;border-radius:12px;border:1px solid #1a1a35;background:transparent;color:#888;font-family:'Syne',sans-serif;font-size:1rem;font-weight:600;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
-  .btn-secondary:hover{border-color:#3030a0;color:#aaaaff}
-  .hero-proof{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px;font-family:'DM Mono',monospace;font-size:.75rem;color:#333}
-  .hero-proof-item{display:flex;align-items:center;gap:6px}
+  .btn-coming{width:100%;padding:16px 32px;border-radius:12px;border:1px solid #1a1a35;background:#0a0a18;color:#333;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:default;position:relative}
+  .coming-badge{background:#0d0d22;border:1px solid #2a2a50;border-radius:20px;padding:3px 10px;font-family:'DM Mono',monospace;font-size:.65rem;color:#4040a0;letter-spacing:.06em}
+  .hero-free-note{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;line-height:1.6;max-width:380px;text-align:center}
+  .hero-proof{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;font-family:'DM Mono',monospace;font-size:.72rem;color:#333;margin-top:16px}
+  .hero-proof-item{display:flex;align-items:center;gap:5px}
 
   /* ── DEMO WINDOW ── */
-  .demo-wrap{width:100%;max-width:660px;margin:0 auto 100px;position:relative}
+  .demo-wrap{width:100%;max-width:660px;margin:0 auto 100px;position:relative;padding:0 24px}
   .demo-window{background:#0a0a18;border:1px solid #1a1a30;border-radius:20px;overflow:hidden;box-shadow:0 40px 80px #00000080}
   .demo-bar{background:#0d0d22;padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1a1a30}
   .demo-dot{width:10px;height:10px;border-radius:50%}
@@ -69,6 +68,8 @@ const css = `
   .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
   .feature-card{background:#0a0a18;border:1px solid #141428;border-radius:18px;padding:28px;transition:border-color .3s}
   .feature-card:hover{border-color:#2a2a50}
+  .feature-card.locked{opacity:.55;position:relative}
+  .feature-card.locked::after{content:'PRO';position:absolute;top:16px;right:16px;background:#0d0d22;border:1px solid #2a2a50;border-radius:6px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:.6rem;color:#4040a0;letter-spacing:.08em}
   .feature-icon{font-size:2rem;margin-bottom:16px;display:block}
   .feature-title{font-size:1.05rem;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
   .feature-desc{font-family:'DM Mono',monospace;font-size:.78rem;color:#444;line-height:1.6}
@@ -92,18 +93,35 @@ const css = `
   .testi-role{font-family:'DM Mono',monospace;font-size:.68rem;color:#444}
 
   /* ── PRICING ── */
-  .pricing-card{max-width:480px;margin:0 auto;background:#0a0a18;border:1px solid #2020a0;border-radius:24px;padding:40px;text-align:center;position:relative;overflow:hidden}
-  .pricing-glow{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,#1a1a5030 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none}
-  .pricing-tag{display:inline-block;background:#0d0d2a;border:1px solid #2020a0;border-radius:20px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:.7rem;color:#6060cc;margin-bottom:20px;letter-spacing:.06em}
-  .pricing-price{font-size:4rem;font-weight:800;letter-spacing:-.04em;margin-bottom:6px;background:linear-gradient(135deg,#eeeeff,#8080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .pricing-once{font-family:'DM Mono',monospace;font-size:.82rem;color:#444;margin-bottom:28px}
-  .pricing-features{text-align:left;margin-bottom:32px}
-  .pricing-feat{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;font-family:'DM Mono',monospace;font-size:.8rem;color:#666;line-height:1.5}
-  .pricing-feat-check{color:#4ecc96;flex-shrink:0;margin-top:1px}
-  .pricing-btn{width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,#2020a0,#5050dd);color:#fff;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
-  .pricing-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px #3030a050}
-  .pricing-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .pricing-note{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;margin-top:14px}
+  .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:780px;margin:0 auto}
+  .plan-card{background:#0a0a18;border:1px solid #141428;border-radius:24px;padding:36px;position:relative;overflow:hidden}
+  .plan-card.pro{border-color:#2020a0}
+  .plan-card-glow{position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,#1a1a5028 0%,transparent 70%);top:-80px;left:50%;transform:translateX(-50%);pointer-events:none}
+  .plan-label{display:inline-block;border-radius:20px;padding:4px 12px;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.08em;margin-bottom:16px}
+  .plan-label.free{background:#0a1a0a;border:1px solid #1a3a1a;color:#4ecc96}
+  .plan-label.pro{background:#0d0d2a;border:1px solid #2020a0;color:#6060cc}
+  .plan-name{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+  .plan-price{font-size:2.8rem;font-weight:800;letter-spacing:-.04em;margin-bottom:4px}
+  .plan-price.pro-price{background:linear-gradient(135deg,#eeeeff,#8080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .plan-period{font-family:'DM Mono',monospace;font-size:.78rem;color:#444;margin-bottom:28px}
+  .plan-feats{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+  .plan-feat{display:flex;align-items:flex-start;gap:9px;font-family:'DM Mono',monospace;font-size:.78rem;color:#555;line-height:1.5}
+  .plan-feat-icon{flex-shrink:0;margin-top:1px}
+  .plan-feat.on{color:#888}
+  .plan-feat.on .plan-feat-icon{color:#4ecc96}
+  .plan-feat.off .plan-feat-icon{color:#333}
+  .plan-btn{width:100%;padding:14px;border-radius:12px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .plan-btn.free-btn{background:#0d0d22;border:1px solid #1a1a35;color:#888}
+  .plan-btn.free-btn:hover{border-color:#3030a0;color:#aaaaff;background:#10102a}
+  .plan-btn.pro-btn{background:#12122a;border:1px solid #2a2a55;color:#444;cursor:not-allowed}
+  .plan-note{font-family:'DM Mono',monospace;font-size:.7rem;color:#2a2a40;margin-top:12px;text-align:center;line-height:1.5}
+  .notify-form{display:flex;gap:8px;margin-top:14px}
+  .notify-input{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:8px;padding:9px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.78rem;outline:none;transition:border-color .2s}
+  .notify-input:focus{border-color:#3030a0}
+  .notify-input::placeholder{color:#2a2a40}
+  .notify-send{flex-shrink:0;padding:9px 14px;border-radius:8px;background:#12122a;border:1px solid #2a2a50;color:#6060cc;font-family:'DM Mono',monospace;font-size:.75rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .notify-send:hover{background:#1a1a40;color:#9090ff}
+  .notify-sent{font-family:'DM Mono',monospace;font-size:.75rem;color:#4ecc96;text-align:center;margin-top:12px;padding:8px;background:#0a1a0a;border-radius:8px}
 
   /* ── FAQ ── */
   .faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
@@ -132,59 +150,70 @@ const css = `
     nav{padding:14px 20px}
     .hero{padding:100px 20px 60px}
     section{padding:72px 20px}
-    .pricing-card{padding:28px 20px}
     footer{padding:24px 20px}
   }
 `;
 
+const FREE_FEATS = [
+  { on: true,  text: "6 interviews per month" },
+  { on: true,  text: "Voice-enabled AI interviewer" },
+  { on: true,  text: "Job URL analyzer" },
+  { on: true,  text: "Real-time coach tips" },
+  { on: true,  text: "5 questions per interview" },
+  { on: false, text: "Hard & Easy difficulty levels" },
+  { on: false, text: "Resume upload & parsing" },
+  { on: false, text: "Unlimited interviews" },
+  { on: false, text: "Interview history & tracking" },
+];
+
+const PRO_FEATS = [
+  { on: true, text: "Everything in Free" },
+  { on: true, text: "Unlimited interviews per month" },
+  { on: true, text: "Up to 10 questions per session" },
+  { on: true, text: "All 3 difficulty levels — Easy, Standard, Hard" },
+  { on: true, text: "Resume upload & parsing" },
+  { on: true, text: "Interview history & progress tracking" },
+];
+
 const FEATURES = [
-  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud and listens to your answers via microphone — just like a real interview." },
-  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL or upload your resume and get questions tailored exactly to that role and company." },
-  { icon: "📊", title: "Honest scoring & feedback", desc: "Get scored on a calibrated rubric — not inflated praise. Specific strengths and concrete improvements after each session." },
-  { icon: "⚡", title: "3 difficulty levels", desc: "Sam (encouraging), Jordan (balanced), or Morgan (relentless VP who pushes back on everything). Build real confidence." },
-  { icon: "💬", title: "Real-time coach tips", desc: "After each answer, your personal AI coach shows what worked and the single most impactful thing to improve — instantly." },
-  { icon: "📄", title: "Resume-aware prep", desc: "Upload your CV and the interviewer knows your background, making every session more relevant and targeted." },
+  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud and listens to your answers — just like the real thing.", free: true },
+  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL and get questions tailored exactly to that role and company.", free: true },
+  { icon: "📊", title: "Honest scoring & feedback", desc: "Get scored on a calibrated rubric — not inflated praise. Specific strengths and concrete improvements.", free: true },
+  { icon: "⚡", title: "3 difficulty levels", desc: "Sam (encouraging), Jordan (balanced), or Morgan (relentless VP who pushes back on everything).", free: false },
+  { icon: "💬", title: "Real-time coach tips", desc: "After each answer, your AI coach shows what worked and the single most impactful thing to improve.", free: true },
+  { icon: "📄", title: "Resume-aware prep", desc: "Upload your CV so the interviewer tailors every question to your actual background and skills.", free: false },
 ];
 
 const STEPS = [
-  { n: "01", title: "Paste the job link or upload your resume", desc: "We analyze the job posting and auto-fill the position, company, and requirements. Or upload your resume to get experience-tailored questions." },
-  { n: "02", title: "Choose your difficulty and start", desc: "Pick from Easy, Standard, or Hard mode. Your AI interviewer — with a real name, personality, and voice — will introduce themselves and begin." },
-  { n: "03", title: "Practice the real conversation", desc: "Answer out loud or by typing. The interviewer pushes back on weak answers, asks follow-ups, and keeps it feeling like a real interview." },
-  { n: "04", title: "Get your detailed report", desc: "After every session, receive an overall score, specific strengths, concrete improvements, and a honest recommendation from your AI coach." },
+  { n: "01", title: "Paste the job link", desc: "We analyze the posting and auto-fill the position, company, and requirements. No copy-paste needed." },
+  { n: "02", title: "Choose difficulty and start", desc: "Pick your level. Your AI interviewer — with a real name and voice — introduces themselves and begins." },
+  { n: "03", title: "Have the real conversation", desc: "Answer out loud or by typing. The interviewer pushes back on weak answers and asks real follow-ups." },
+  { n: "04", title: "Get your detailed report", desc: "Receive an overall score, specific strengths, concrete improvements, and a personal recommendation." },
 ];
 
 const TESTIMONIALS = [
   { stars: "★★★★★", text: '"I had a technical interview at a Series B startup and walked in genuinely confident for the first time. The Hard mode is brutal in the best way — Morgan asked me for specific metrics on every answer and I actually had them."', name: "Alex R.", role: "Software Engineer", initial: "A" },
   { stars: "★★★★★", text: '"Used this before my Google interview. The job URL feature is incredible — it pulled the exact requirements and the questions were spot-on. Got the offer."', name: "Maria C.", role: "Product Manager", initial: "M" },
-  { stars: "★★★★★", text: '"Career changers need this. I was switching from teaching to UX design and had no idea how to talk about my experience. After 10 sessions I had real answers for every behavioral question."', name: "James T.", role: "UX Designer", initial: "J" },
+  { stars: "★★★★★", text: '"Career changers need this. I was switching from teaching to UX design. After 10 sessions I had real answers for every behavioral question and stopped freezing up."', name: "James T.", role: "UX Designer", initial: "J" },
 ];
 
 const FAQS = [
-  { q: "What types of interviews does it practice?", a: "Behavioral interviews (tell me about a time...), competency-based questions, role-specific scenarios, and situational questions — all tailored to the specific job you're applying for." },
-  { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But for the most realistic practice, using your microphone with the voice-enabled mode is highly recommended." },
-  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL and the AI analyzes the actual requirements, responsibilities, and skills to generate highly relevant questions. You can also add your resume for even more targeted prep." },
-  { q: "Is this a subscription or one-time?", a: "One-time payment, lifetime access. No monthly fees, no limits. Pay once and use it forever." },
+  { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews per month with up to 5 questions each, Standard difficulty, and voice + URL features. Pro unlocks unlimited interviews, up to 10 questions, all 3 difficulty levels, resume upload, and history tracking." },
+  { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But using your microphone gives you the most realistic practice experience, including the AI speaking back to you." },
+  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL and the AI analyzes the exact requirements and skills to generate highly relevant questions. Pro users can also upload a resume for even more targeted prep." },
+  { q: "When is Pro launching?", a: "Soon — we're finishing the last features and setting up payments. Drop your email in the notify box and you'll be the first to know, with a launch discount." },
 ];
 
 export default function Landing() {
-  const [buying, setBuying] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifySent, setNotifySent] = useState(false);
 
-  const handleBuy = async () => {
-    if (!STRIPE_ENABLED) {
-      window.location.href = "/app";
-      return;
-    }
-    setBuying(true);
-    try {
-      const res = await fetch("/api/create-checkout-session", { method: "POST" });
-      const { url, error } = await res.json();
-      if (error) { alert(error); setBuying(false); return; }
-      window.location.href = url;
-    } catch {
-      alert("Something went wrong. Please try again.");
-      setBuying(false);
-    }
+  const handleNotify = (e) => {
+    e.preventDefault();
+    if (!notifyEmail.includes("@")) return;
+    // TODO: connect to email list (Mailchimp / Resend / etc.)
+    setNotifySent(true);
   };
 
   return (
@@ -215,60 +244,68 @@ export default function Landing() {
           Practice with an AI interviewer that speaks, pushes back on weak answers,
           gives real-time coaching, and prepares you for the actual conversation.
         </p>
+
         <div className="hero-btns">
-          <button className="btn-primary" onClick={handleBuy}>
-            {buying ? "Redirecting..." : STRIPE_ENABLED ? "Get lifetime access — $29 →" : "Start practicing free →"}
-          </button>
-          <Link href="/app" className="btn-secondary">Try it first →</Link>
+          <Link href="/app" className="btn-primary">
+            Start for free — 6 interviews/month →
+          </Link>
+          <div className="btn-coming">
+            Get Pro access
+            <span className="coming-badge">Coming soon</span>
+          </div>
         </div>
+
+        <div className="hero-free-note">
+          Free includes voice, job URL analyzer, and coach tips.<br />
+          No credit card needed.
+        </div>
+
         <div className="hero-proof">
-          <span className="hero-proof-item">✓ No subscription</span>
-          <span className="hero-proof-item">✓ Voice + microphone</span>
-          <span className="hero-proof-item">✓ Works with any job posting</span>
+          <span className="hero-proof-item">✓ No sign-up required</span>
+          <span className="hero-proof-item">✓ Works on mobile</span>
+          <span className="hero-proof-item">✓ Any job posting</span>
         </div>
       </section>
 
       {/* ── DEMO WINDOW ── */}
-      <div style={{ padding: "0 24px" }}>
-        <div className="demo-wrap">
-          <div className="demo-window">
-            <div className="demo-bar">
-              <div className="demo-dot" style={{ background: "#ff5f57" }} />
-              <div className="demo-dot" style={{ background: "#ffbd2e" }} />
-              <div className="demo-dot" style={{ background: "#28ca41" }} />
-              <span className="demo-title">InterviewHub · Live interview</span>
-            </div>
-            <div className="demo-body">
-              <div className="demo-iv-card">
-                <div className="demo-avatar">JM</div>
-                <div style={{ flex: 1 }}>
-                  <div className="demo-iv-name">Jordan Mills</div>
-                  <div className="demo-iv-sub">Senior Talent Acquisition · Acme Corp</div>
-                  <div className="demo-live">
-                    <div className="demo-live-dot" />
-                    <span className="demo-live-txt">Live interview · speaking...</span>
-                  </div>
+      <div className="demo-wrap">
+        <div className="demo-window">
+          <div className="demo-bar">
+            <div className="demo-dot" style={{ background: "#ff5f57" }} />
+            <div className="demo-dot" style={{ background: "#ffbd2e" }} />
+            <div className="demo-dot" style={{ background: "#28ca41" }} />
+            <span className="demo-title">InterviewHub · Live interview</span>
+          </div>
+          <div className="demo-body">
+            <div className="demo-iv-card">
+              <div className="demo-avatar">JM</div>
+              <div style={{ flex: 1 }}>
+                <div className="demo-iv-name">Jordan Mills</div>
+                <div className="demo-iv-sub">Senior Talent Acquisition · Acme Corp</div>
+                <div className="demo-live">
+                  <div className="demo-live-dot" />
+                  <span className="demo-live-txt">Live interview · speaking...</span>
                 </div>
               </div>
-              <div className="demo-msgs">
-                <div className="demo-msg-ai">
-                  <div className="demo-bubble demo-bubble-ai">
-                    Tell me about a time you had to lead a project with a tight deadline and limited resources. What was your approach?
-                  </div>
+            </div>
+            <div className="demo-msgs">
+              <div className="demo-msg-ai">
+                <div className="demo-bubble demo-bubble-ai">
+                  Tell me about a time you led a project with a tight deadline and limited resources. What was your approach?
                 </div>
-                <div className="demo-msg-user">
-                  <div className="demo-bubble demo-bubble-user">
-                    Sure — at my last company, we had to ship a new onboarding flow in 3 weeks with just 2 engineers. I broke it into daily milestones and cut scope aggressively...
-                  </div>
+              </div>
+              <div className="demo-msg-user">
+                <div className="demo-bubble demo-bubble-user">
+                  Sure — at my last company we had to ship a new onboarding flow in 3 weeks with just 2 engineers. I cut scope aggressively and set daily milestones...
                 </div>
-                <div className="demo-tip">
-                  <div className="demo-tip-label">💬 Coach tip</div>
-                  Good instinct to cut scope — that shows prioritization skill. Add a specific metric: how many users went through the new flow and what happened to activation rate?
-                </div>
-                <div className="demo-msg-ai">
-                  <div className="demo-bubble demo-bubble-ai">
-                    Interesting. What was the actual outcome — did you ship on time, and what did you have to cut to get there?
-                  </div>
+              </div>
+              <div className="demo-tip">
+                <div className="demo-tip-label">💬 Coach tip</div>
+                Good instinct to cut scope — that shows real prioritization skill. Add a specific metric: what happened to activation rate after you shipped?
+              </div>
+              <div className="demo-msg-ai">
+                <div className="demo-bubble demo-bubble-ai">
+                  Interesting. What did you actually cut, and how did you decide what stayed in?
                 </div>
               </div>
             </div>
@@ -280,11 +317,11 @@ export default function Landing() {
       <section id="features">
         <div className="section-inner">
           <div className="section-tag">// Features</div>
-          <h2>Everything you need to<br /><span className="gradient-text">actually prepare</span></h2>
-          <p className="section-sub">Not a quiz app. A real back-and-forth conversation with an interviewer who challenges you like the real thing.</p>
+          <h2>Not a quiz app. A real<br /><span className="gradient-text">conversation</span></h2>
+          <p className="section-sub">Back-and-forth with an interviewer who actually challenges you — features marked PRO are coming in the paid plan.</p>
           <div className="features-grid">
             {FEATURES.map((f) => (
-              <div className="feature-card" key={f.title}>
+              <div className={`feature-card${f.free ? "" : " locked"}`} key={f.title}>
                 <span className="feature-icon">{f.icon}</span>
                 <div className="feature-title">{f.title}</div>
                 <div className="feature-desc">{f.desc}</div>
@@ -341,37 +378,61 @@ export default function Landing() {
         <div className="section-inner">
           <div className="section-tag" style={{ textAlign: "center" }}>// Pricing</div>
           <h2 style={{ textAlign: "center", marginBottom: 12 }}>
-            One price.<br /><span className="gradient-text">Unlimited practice.</span>
+            Start free.<br /><span className="gradient-text">Upgrade when ready.</span>
           </h2>
           <p className="section-sub" style={{ margin: "0 auto 48px", textAlign: "center" }}>
-            No subscription. Pay once, use forever.
+            Try it free today. Pro is coming soon — drop your email to get notified first.
           </p>
-          <div className="pricing-card">
-            <div className="pricing-glow" />
-            <div className="pricing-tag">Lifetime access</div>
-            <div className="pricing-price">{STRIPE_ENABLED ? "$29" : "Free"}</div>
-            <div className="pricing-once">{STRIPE_ENABLED ? "one-time · no subscription" : "during beta"}</div>
-            <div className="pricing-features">
-              {[
-                "Unlimited interview sessions",
-                "Voice-enabled AI interviewer",
-                "Job URL analyzer — paste any posting",
-                "Resume upload & parsing",
-                "3 difficulty levels (Easy / Standard / Hard)",
-                "Real-time coaching tips after each answer",
-                "Detailed score report with specific feedback",
-                "Interview history tracking",
-              ].map((f) => (
-                <div className="pricing-feat" key={f}>
-                  <span className="pricing-feat-check">✓</span>
-                  {f}
-                </div>
-              ))}
+          <div className="pricing-grid">
+            {/* FREE */}
+            <div className="plan-card">
+              <div className="plan-label free">Free</div>
+              <div className="plan-name">Starter</div>
+              <div className="plan-price">$0</div>
+              <div className="plan-period">forever · no card needed</div>
+              <div className="plan-feats">
+                {FREE_FEATS.map((f) => (
+                  <div className={`plan-feat ${f.on ? "on" : "off"}`} key={f.text}>
+                    <span className="plan-feat-icon">{f.on ? "✓" : "–"}</span>
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+              <Link href="/app" className="plan-btn free-btn">Start practicing free →</Link>
             </div>
-            <button className="pricing-btn" onClick={handleBuy} disabled={buying}>
-              {buying ? "Redirecting to payment..." : STRIPE_ENABLED ? "Get lifetime access →" : "Start practicing free →"}
-            </button>
-            <div className="pricing-note">Secure payment via Stripe · Instant access</div>
+
+            {/* PRO */}
+            <div className="plan-card pro">
+              <div className="plan-card-glow" />
+              <div className="plan-label pro">Pro · Coming soon</div>
+              <div className="plan-name">Unlimited</div>
+              <div className="plan-price pro-price">$29</div>
+              <div className="plan-period">one-time · no subscription ever</div>
+              <div className="plan-feats">
+                {PRO_FEATS.map((f) => (
+                  <div className="plan-feat on" key={f.text}>
+                    <span className="plan-feat-icon" style={{ color: "#6060cc" }}>✓</span>
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+              <button className="plan-btn pro-btn" disabled>Coming soon</button>
+              {notifySent ? (
+                <div className="notify-sent">You&apos;re on the list — we&apos;ll email you at launch!</div>
+              ) : (
+                <form className="notify-form" onSubmit={handleNotify}>
+                  <input
+                    className="notify-input"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={notifyEmail}
+                    onChange={e => setNotifyEmail(e.target.value)}
+                  />
+                  <button type="submit" className="notify-send">Notify me</button>
+                </form>
+              )}
+              <div className="plan-note">One-time payment · Instant access · No subscription</div>
+            </div>
           </div>
         </div>
       </section>
@@ -400,12 +461,12 @@ export default function Landing() {
         <div className="cta-inner">
           <h2>Ready to stop winging it?</h2>
           <p className="cta-sub">
-            Every interview you practice is one closer to the offer.
-            Start now — your AI interviewer is ready.
+            6 free interviews a month. No sign-up needed.<br />
+            Your AI interviewer is ready right now.
           </p>
-          <button className="btn-primary" style={{ margin: "0 auto" }} onClick={handleBuy}>
-            {STRIPE_ENABLED ? "Get lifetime access — $29 →" : "Start practicing free →"}
-          </button>
+          <Link href="/app" className="btn-primary" style={{ margin: "0 auto" }}>
+            Start practicing free →
+          </Link>
         </div>
       </div>
 
