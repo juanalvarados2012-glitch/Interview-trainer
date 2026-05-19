@@ -1,11 +1,9 @@
-import formidable from "formidable";
 import fs from "fs";
 import pdfParse from "pdf-parse";
 
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: { sizeLimit: "6mb" } } };
 
-// Rough text fallback: extract printable ASCII runs from the raw buffer.
-// Catches PDFs that pdf-parse can't handle (encrypted, unusual encoding, iOS-specific).
+// Fallback: extract printable ASCII runs from raw PDF bytes
 function extractRawText(buffer) {
   const raw = buffer.toString("latin1");
   const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
@@ -23,25 +21,22 @@ export default async function handler(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
 
-  const form = formidable({ maxFileSize: 5 * 1024 * 1024 });
-  let files;
+  const { fileBase64 } = req.body;
+  if (!fileBase64) return res.status(400).json({ error: "No file data received" });
+
+  let buffer;
   try {
-    [, files] = await form.parse(req);
+    buffer = Buffer.from(fileBase64, "base64");
   } catch (e) {
-    return res.status(400).json({ error: "Upload failed: " + e.message });
+    return res.status(400).json({ error: "Invalid file data" });
   }
-
-  const file = files.resume?.[0];
-  if (!file) return res.status(400).json({ error: "No file uploaded" });
-
-  const buffer = fs.readFileSync(file.filepath);
 
   let text = "";
   try {
-    const parsed = await pdfParse(buffer, { max: 0 });
+    const parsed = await pdfParse(buffer);
     text = parsed.text?.trim() || "";
   } catch (_) {
-    // pdf-parse failed (encrypted PDF, unusual encoding, etc.) — try raw extraction
+    // pdf-parse failed — use raw ASCII fallback
     text = extractRawText(buffer);
   }
 
@@ -54,10 +49,7 @@ export default async function handler(req, res) {
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         max_tokens: 600,
