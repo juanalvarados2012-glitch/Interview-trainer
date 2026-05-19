@@ -346,6 +346,23 @@ const EXAMPLES = [
 
 const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
 
+/* ── DIFFICULTY CONFIG ───────────────────────────────────────── */
+const DIFF_STATIC = {
+  easy:   { name: "Sam Rivera",   title: "HR Coordinator",                  label: "Easy",     emoji: "🟢" },
+  medium: { name: "Jordan Mills", title: "Senior Talent Acquisition Manager", label: "Standard", emoji: "🟡" },
+  hard:   { name: "Morgan Price", title: "VP of Talent & Strategy",          label: "Hard",     emoji: "🔴" },
+};
+
+function makePersona(diff, cmp) {
+  const c = cmp || "the company";
+  if (diff === "easy") return `You are Sam Rivera, a friendly HR Coordinator at ${c}. You genuinely want to help candidates succeed and feel comfortable.
+YOUR STYLE: Warm, encouraging, patient. You give positive reinforcement often. You accept answers that show general relevant experience even without perfect specifics. You ask gentle follow-ups like "That's interesting — could you tell me a bit more about that?" You rarely push back hard; if an answer is weak, you give a hint: "Maybe think of a specific time when..." You celebrate good answers enthusiastically.`;
+  if (diff === "medium") return `You are Jordan Mills, a Senior Talent Acquisition Manager at ${c}. Professional and fair.
+YOUR STYLE: Balanced and professional. You acknowledge strong answers genuinely. You probe decent answers once for specifics. You don't accept vague non-answers but you're not harsh about it. You feel like a real workplace interview.`;
+  return `You are Morgan Price, VP of Talent & Strategy at ${c}. You only hire the top 5% and your interviews are known to be tough.
+YOUR STYLE: Direct, skeptical, demanding. You challenge almost every answer — even good ones — to test how candidates handle pressure. You ask for specific metrics, numbers, and outcomes. If they can't give you data, you push: "What was the actual impact? What were the numbers?" You frequently ask "Why?" and "So what?" after answers. You're not mean but you're relentless. Weak answers get responses like "I've heard that before — give me something specific that sets you apart."`;
+}
+
 /* ── APP ─────────────────────────────────────────────────────── */
 export default function App() {
   const [phase, setPhase] = useState("setup");
@@ -368,6 +385,7 @@ export default function App() {
   const [resumeParsing, setResumeParsing] = useState(false);
   const [jobMatches, setJobMatches] = useState(null);
   const [resumeErr, setResumeErr] = useState("");
+  const [practicingJob, setPracticingJob] = useState(null);
   const resumeInputRef = useRef(null);
 
   // Interview
@@ -392,47 +410,27 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages, aiThinking]);
 
-  const DIFFICULTY_CONFIG = {
-    easy: {
-      name: "Sam Rivera",
-      title: "HR Coordinator",
-      label: "Easy",
-      emoji: "🟢",
-      persona: `You are Sam Rivera, a friendly HR Coordinator at ${company || "the company"}. You genuinely want to help candidates succeed and feel comfortable.
-YOUR STYLE: Warm, encouraging, patient. You give positive reinforcement often. You accept answers that show general relevant experience even without perfect specifics. You ask gentle follow-ups like "That's interesting — could you tell me a bit more about that?" You rarely push back hard; if an answer is weak, you give a hint: "Maybe think of a specific time when..." You celebrate good answers enthusiastically.`,
-    },
-    medium: {
-      name: "Jordan Mills",
-      title: "Senior Talent Acquisition Manager",
-      label: "Standard",
-      emoji: "🟡",
-      persona: `You are Jordan Mills, a Senior Talent Acquisition Manager at ${company || "the company"}. Professional and fair.
-YOUR STYLE: Balanced and professional. You acknowledge strong answers genuinely. You probe decent answers once for specifics. You don't accept vague non-answers but you're not harsh about it. You feel like a real workplace interview.`,
-    },
-    hard: {
-      name: "Morgan Price",
-      title: "VP of Talent & Strategy",
-      label: "Hard",
-      emoji: "🔴",
-      persona: `You are Morgan Price, VP of Talent & Strategy at ${company || "the company"}. You only hire the top 5% and your interviews are known to be tough.
-YOUR STYLE: Direct, skeptical, demanding. You challenge almost every answer — even good ones — to test how candidates handle pressure. You ask for specific metrics, numbers, and outcomes. If they can't give you data, you push: "What was the actual impact? What were the numbers?" You frequently ask "Why?" and "So what?" after answers. You're not mean but you're relentless. Weak answers get responses like "I've heard that before — give me something specific that sets you apart."`,
-    },
-  };
+  // buildSystem accepts optional overrides so startInterview can be called with
+  // values that haven't been committed to state yet (e.g. from practiceJob).
+  const buildSystem = useCallback((opts = {}) => {
+    const role = opts.role     ?? jobRole;
+    const cmp  = opts.company  ?? company;
+    const jd   = opts.jd       ?? jdText;
+    const nq   = opts.numQ     ?? numQ;
+    const diff = opts.difficulty ?? difficulty;
+    const cfg  = DIFF_STATIC[diff];
+    return `${makePersona(diff, cmp)}
 
-  const buildSystem = useCallback(() => {
-    const cfg = DIFFICULTY_CONFIG[difficulty];
-    return `${cfg.persona}
-
-Job description for ${jobRole}: ${jdText}
+Job description for ${role}: ${jd}
 
 INTERVIEW RULES (follow strictly):
 - When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
-- Ask exactly ${numQ} main questions, each specific to the actual job description above.
+- Ask exactly ${nq} main questions, each specific to the actual job description above.
 - React to answers according to your personality style above.
 - Max 2 follow-up questions per main question before moving on.
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
 - Vary how you start each response — don't repeat the same opener.
-- When all ${numQ} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
+- When all ${nq} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
   }, [jobRole, company, jdText, numQ, difficulty]);
 
   /* ── SCRAPE JOB URL ── */
@@ -458,16 +456,19 @@ INTERVIEW RULES (follow strictly):
   };
 
   /* ── START INTERVIEW ── */
-  const startInterview = async () => {
-    unlock(); // prime synthesis context synchronously before async work
+  // opts = { role, company, jd } lets practiceJob bypass stale state
+  const startInterview = async (opts = {}) => {
+    unlock();
+    if (opts.role    !== undefined) setJobRole(opts.role);
+    if (opts.company !== undefined) setCompany(opts.company);
+    if (opts.jd      !== undefined) setJdText(opts.jd);
     setStartLoading(true);
     setStartErr("");
     setTips({}); setLoadingTips({});
     const trigger = [{ role: "user", content: "[START]" }];
-    // Streaming placeholder
     setDisplayMessages([{ role: "assistant", content: "", streaming: true }]);
     try {
-      const text = await callAIStream(buildSystem(), trigger, 400, (partial) => {
+      const text = await callAIStream(buildSystem(opts), trigger, 400, (partial) => {
         setDisplayMessages([{ role: "assistant", content: partial, streaming: true }]);
       });
       setApiMessages([...trigger, { role: "assistant", content: text }]);
@@ -614,6 +615,31 @@ Respond ONLY with valid JSON, no extra text or markdown:
     }
   };
 
+  /* ── PRACTICE JOB CARD ── */
+  const practiceJob = async (job) => {
+    setPracticingJob(job.title);
+    try {
+      const raw = await callAI(
+        `You are a job description writer. Create a realistic job description for a "${job.title}" position.
+Respond ONLY with valid JSON, no extra text:
+{"company":"realistic company name","jd":"2-3 paragraph job description covering role overview, key responsibilities, and required qualifications"}`,
+        [{ role: "user", content: `Job title: ${job.title}` }],
+        500
+      );
+      const match = raw.match(/\{[\s\S]*\}/);
+      const { company: c = "", jd: d = "" } = match ? JSON.parse(match[0]) : {};
+      setPracticingJob(null);
+      await startInterview({ role: job.title, company: c, jd: d });
+    } catch {
+      setPracticingJob(null);
+      setJobRole(job.title);
+      setTimeout(() => {
+        jobRoleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        jobRoleRef.current?.focus();
+      }, 80);
+    }
+  };
+
   const uploadResume = (file) => {
     if (!file) return;
     setResumeParsing(true);
@@ -626,18 +652,38 @@ Respond ONLY with valid JSON, no extra text or markdown:
       setResumeParsing(false);
     };
     reader.onload = async (e) => {
-      // Extract readable text from PDF bytes directly in the browser.
-      // This avoids both iOS Safari's FormData bug and serverless PDF-parse issues.
-      const bytes = new Uint8Array(e.target.result);
-      const raw = Array.from(bytes, b => (b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9
-        ? String.fromCharCode(b) : " ").join("");
-      const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
-      const resumeText = chunks
-        .filter(c => /[a-zA-Z]{3,}/.test(c))
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 8000);
+      const arrayBuffer = e.target.result;
+      let resumeText = "";
+
+      // Try pdfjs-dist first — handles encoded/embedded-font PDFs properly
+      try {
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        const parts = [];
+        for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          parts.push(content.items.map(item => item.str).join(" "));
+        }
+        resumeText = parts.join("\n").replace(/\s+/g, " ").trim().slice(0, 8000);
+      } catch {}
+
+      // Fallback: regex extraction from raw bytes
+      if (!resumeText || resumeText.length < 50) {
+        const bytes = new Uint8Array(arrayBuffer);
+        const raw = Array.from(bytes, b =>
+          (b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9 ? String.fromCharCode(b) : " "
+        ).join("");
+        const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
+        resumeText = chunks
+          .filter(c => /[a-zA-Z]{3,}/.test(c))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 8000);
+      }
 
       const realWordCount = (resumeText.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
       if (resumeText.length < 50 || realWordCount < 25) {
@@ -693,7 +739,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
-    setResumeFile(null); setResumeErr(""); setJobMatches(null);
+    setResumeFile(null); setResumeErr(""); setJobMatches(null); setPracticingJob(null);
   };
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
@@ -829,15 +875,10 @@ Respond ONLY with valid JSON, no extra text or markdown:
                           </a>
                           <button
                             className="job-card-practice"
-                            onClick={() => {
-                              setJobRole(j.title);
-                              setTimeout(() => {
-                                jobRoleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                                jobRoleRef.current?.focus();
-                              }, 80);
-                            }}
+                            disabled={!!practicingJob}
+                            onClick={() => practiceJob(j)}
                           >
-                            Practice →
+                            {practicingJob === j.title ? "Preparing..." : "Practice →"}
                           </button>
                         </div>
                       </div>
@@ -910,7 +951,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
           <div className="card" key="interview">
             {/* Interviewer presence card */}
             {(() => {
-              const cfg = DIFFICULTY_CONFIG[difficulty];
+              const cfg = DIFF_STATIC[difficulty];
               const initials = cfg.name.split(" ").map(n => n[0]).join("");
               const isStreaming = displayMessages.some(m => m.streaming);
               return (
