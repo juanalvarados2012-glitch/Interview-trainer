@@ -80,22 +80,14 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  /* ── 3. LINKEDIN SPECIAL HANDLING ── */
-  // LinkedIn typically serves a login wall but og:title contains "<Job> hiring <Role> in <Location>"
-  // and og:description has a snippet. Description is usually too thin to be useful.
-  if (isLinkedIn && !structured?.description) {
-    // Try to parse "Company hiring Role in Location" pattern
-    let role = null, company = null;
+  // LinkedIn fallback: parse "Company hiring Role in Location" from og:title
+  // — used only if the AI fails to produce a real description below.
+  const linkedInFallback = (() => {
+    if (!isLinkedIn) return null;
     const m = metaTitle?.match(/^(.+?)\s+hiring\s+(.+?)(?:\s+in\s+.+)?$/i);
-    if (m) { company = m[1].trim(); role = m[2].trim(); }
-    return res.status(200).json({
-      role: role || "",
-      company: company || "",
-      description: "",
-      partial: true,
-      note: "LinkedIn doesn't let us read the full description. We pre-filled what we could — please paste the job description text in the field below.",
-    });
-  }
+    if (!m) return null;
+    return { company: m[1].trim(), role: m[2].trim() };
+  })();
 
   /* ── 4. BUILD AI INPUT ── */
   let aiInput;
@@ -127,7 +119,7 @@ export default async function handler(req, res) {
       (metaDesc ? `META DESCRIPTION: ${metaDesc}\n\n` : "") +
       `PAGE TEXT:\n${pageText.slice(startIdx, startIdx + 9000)}`;
 
-    if (pageText.length < 500) {
+    if (pageText.length < 500 && !linkedInFallback) {
       return res.status(422).json({
         error: "Couldn't read enough content from this page. Paste the job description manually in the field below.",
       });
@@ -161,7 +153,18 @@ If the page is a login wall or doesn't contain a real job posting, respond: {"er
     if (!match) throw new Error("Could not parse content");
 
     const result = JSON.parse(match[0]);
+
     if (result.error) {
+      // AI couldn't extract — for LinkedIn we still try to return what we parsed
+      if (linkedInFallback) {
+        return res.status(200).json({
+          role: linkedInFallback.role,
+          company: linkedInFallback.company,
+          description: "",
+          partial: true,
+          note: "LinkedIn didn't return the full posting. We pre-filled what we could — please paste the job description text in the field below.",
+        });
+      }
       return res.status(422).json({
         error: result.error + " — paste the job description manually in the field below.",
       });
@@ -170,8 +173,27 @@ If the page is a login wall or doesn't contain a real job posting, respond: {"er
     if (structured?.role && (!result.role || result.role.length < 3)) result.role = structured.role;
     if (structured?.company && (!result.company || result.company.length < 2)) result.company = structured.company;
 
+    // Thin description on LinkedIn → keep what we have but warn the user
+    if (isLinkedIn && (!result.description || result.description.length < 200)) {
+      if (linkedInFallback) {
+        result.role = result.role || linkedInFallback.role;
+        result.company = result.company || linkedInFallback.company;
+      }
+      result.partial = true;
+      result.note = "LinkedIn only gave us a snippet. Pre-filled what we could — paste the full job description below for a better interview.";
+    }
+
     return res.status(200).json(result);
   } catch (e) {
+    if (linkedInFallback) {
+      return res.status(200).json({
+        role: linkedInFallback.role,
+        company: linkedInFallback.company,
+        description: "",
+        partial: true,
+        note: "LinkedIn didn't return the full posting. We pre-filled what we could — please paste the job description text in the field below.",
+      });
+    }
     return res.status(500).json({ error: "Error extracting job posting: " + e.message });
   }
 }
