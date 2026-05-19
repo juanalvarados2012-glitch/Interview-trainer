@@ -23,18 +23,17 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are a career advisor. Based on a candidate's profile, suggest the 5 best matching job titles they should apply for right now.
+            content: `You are a career advisor. Suggest the 5 best matching job titles for the candidate based STRICTLY on the profile below.
+
+CRITICAL RULES:
+- Stay in the SAME industry/function as the candidate's actual experience. If they work in banking/finance, suggest banking/finance roles. If healthcare, healthcare. If marketing, marketing. Never default to tech/software unless their profile is explicitly tech.
+- Every suggestion must be directly justifiable by skills or experience in the profile. Do NOT invent skills they didn't mention.
+- If the profile is too vague or doesn't clearly describe a real career, return {"jobs": []}.
+- Titles must be real job titles that appear on LinkedIn. Keep each title under 6 words.
+- Reason must quote or paraphrase a specific skill or experience from their profile.
+
 Respond ONLY with valid JSON, no extra text:
-{
-  "jobs": [
-    { "title": "Job Title Here", "reason": "One specific sentence explaining why this fits their background" },
-    { "title": "Job Title 2", "reason": "..." },
-    { "title": "Job Title 3", "reason": "..." },
-    { "title": "Job Title 4", "reason": "..." },
-    { "title": "Job Title 5", "reason": "..." }
-  ]
-}
-Rules: titles must be real job titles that appear on LinkedIn. Keep each title under 6 words. Reason must reference specific skills or experience from their profile.`,
+{"jobs":[{"title":"...","reason":"..."},{"title":"...","reason":"..."},{"title":"...","reason":"..."},{"title":"...","reason":"..."},{"title":"...","reason":"..."}]}`,
           },
           { role: "user", content: input },
         ],

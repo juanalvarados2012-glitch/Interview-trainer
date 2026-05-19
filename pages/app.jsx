@@ -384,8 +384,12 @@ export default function App() {
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeParsing, setResumeParsing] = useState(false);
   const [jobMatches, setJobMatches] = useState(null);
+  const [jobMatchesErr, setJobMatchesErr] = useState("");
   const [resumeErr, setResumeErr] = useState("");
+  const [resumeContext, setResumeContext] = useState("");
   const [practicingJob, setPracticingJob] = useState(null);
+  const [pasteMode, setPasteMode] = useState(false);
+  const [pastedResume, setPastedResume] = useState("");
   const resumeInputRef = useRef(null);
 
   // Interview
@@ -419,10 +423,11 @@ export default function App() {
     const nq   = opts.numQ     ?? numQ;
     const diff = opts.difficulty ?? difficulty;
     const cfg  = DIFF_STATIC[diff];
+    const ctx = opts.resumeContext ?? resumeContext;
     return `${makePersona(diff, cmp)}
 
 Job description for ${role}: ${jd}
-
+${ctx ? `\nCandidate background (from their resume): ${ctx}\n` : ""}
 INTERVIEW RULES (follow strictly):
 - When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
 - Ask exactly ${nq} main questions, each specific to the actual job description above.
@@ -431,7 +436,7 @@ INTERVIEW RULES (follow strictly):
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
 - Vary how you start each response — don't repeat the same opener.
 - When all ${nq} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
-  }, [jobRole, company, jdText, numQ, difficulty]);
+  }, [jobRole, company, jdText, numQ, difficulty, resumeContext]);
 
   /* ── SCRAPE JOB URL ── */
   const scrapeJob = async () => {
@@ -640,11 +645,74 @@ Respond ONLY with valid JSON, no extra text:
     }
   };
 
+  // Heuristic: does this look like real resume prose (vs PDF binary garbage)?
+  const looksLikeResume = (text) => {
+    if (!text || text.length < 80) return false;
+    const words = text.match(/\b[a-zA-Z]{3,}\b/g) || [];
+    if (words.length < 40) return false;
+    // Real resumes are mostly letters/spaces. PDF binary garbage is mostly punctuation/operators.
+    const letterRatio = (text.match(/[a-zA-Z]/g)?.length || 0) / text.length;
+    return letterRatio >= 0.5;
+  };
+
+  const analyzeResumeText = async (resumeText) => {
+    setResumeParsing(true);
+    setResumeErr("");
+    setJobMatches(null);
+    setJobMatchesErr("");
+    setResumeContext("");
+
+    if (!looksLikeResume(resumeText)) {
+      setResumeErr(
+        "Couldn't read enough text from this resume. Please copy the text from your resume and use the \"Paste resume text\" option below."
+      );
+      setResumeParsing(false);
+      return;
+    }
+
+    let parsed = null;
+    try {
+      const res = await fetch("/api/parse-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Parse failed");
+      parsed = data;
+      if (data.targetRole && !jobRole) setJobRole(data.targetRole);
+      const ctxParts = [];
+      if (data.summary) ctxParts.push(data.summary);
+      if (data.skills?.length) ctxParts.push("Key skills: " + data.skills.join(", "));
+      setResumeContext(ctxParts.join(" "));
+    } catch (e) {
+      setResumeErr(e.message);
+    }
+    setResumeParsing(false);
+
+    if (parsed) {
+      try {
+        const r = await fetch("/api/find-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Job search failed");
+        if (d.jobs?.length) setJobMatches(d);
+        else setJobMatchesErr("Couldn't generate job matches. Try again or paste more resume detail.");
+      } catch (e) {
+        setJobMatchesErr(e.message);
+      }
+    }
+  };
+
   const uploadResume = (file) => {
     if (!file) return;
     setResumeParsing(true);
     setResumeErr("");
     setJobMatches(null);
+    setJobMatchesErr("");
 
     const reader = new FileReader();
     reader.onerror = () => {
@@ -655,7 +723,6 @@ Respond ONLY with valid JSON, no extra text:
       const arrayBuffer = e.target.result;
       let resumeText = "";
 
-      // Try pdfjs-dist first — handles encoded/embedded-font PDFs properly
       try {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -670,65 +737,22 @@ Respond ONLY with valid JSON, no extra text:
         resumeText = parts.join("\n").replace(/\s+/g, " ").trim().slice(0, 8000);
       } catch {}
 
-      // Fallback: regex extraction from raw bytes
-      if (!resumeText || resumeText.length < 50) {
-        const bytes = new Uint8Array(arrayBuffer);
-        const raw = Array.from(bytes, b =>
-          (b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9 ? String.fromCharCode(b) : " "
-        ).join("");
-        const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
-        resumeText = chunks
-          .filter(c => /[a-zA-Z]{3,}/.test(c))
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 8000);
-      }
-
-      const realWordCount = (resumeText.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
-      if (resumeText.length < 50 || realWordCount < 25) {
+      if (!looksLikeResume(resumeText)) {
         setResumeErr(
-          "Could not read this PDF — it may use encrypted or non-standard fonts. Try copying your resume text and pasting it in the Job Description field instead."
+          "Could not read this PDF — it may be image-only or use non-standard fonts. Use the \"Paste resume text\" option below instead."
         );
         setResumeParsing(false);
         return;
       }
 
-      let parsed = null;
-      try {
-        const res = await fetch("/api/parse-resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resumeText }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Parse failed");
-        if (data.targetRole && !jobRole) setJobRole(data.targetRole);
-        if (data.summary) setJdText(prev =>
-          prev ? prev + "\n\nCandidate background: " + data.summary : "Candidate background: " + data.summary
-        );
-        if (data.skills?.length) setJdText(prev =>
-          prev + "\nKey skills: " + data.skills.join(", ")
-        );
-        parsed = data;
-      } catch (e) {
-        setResumeErr(e.message);
-      }
-      setResumeParsing(false);
-
-      // Completely separate — errors here never affect resumeErr
-      if (parsed) {
-        fetch("/api/find-jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
-        })
-          .then(r => r.json())
-          .then(d => { if (d.jobs) setJobMatches(d); })
-          .catch(() => {});
-      }
+      await analyzeResumeText(resumeText);
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  const submitPastedResume = () => {
+    setResumeFile(null);
+    analyzeResumeText(pastedResume.trim());
   };
 
   const restart = () => {
@@ -739,7 +763,8 @@ Respond ONLY with valid JSON, no extra text:
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
-    setResumeFile(null); setResumeErr(""); setJobMatches(null); setPracticingJob(null);
+    setResumeFile(null); setResumeErr(""); setJobMatches(null); setJobMatchesErr("");
+    setResumeContext(""); setPasteMode(false); setPastedResume(""); setPracticingJob(null);
   };
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
@@ -841,16 +866,56 @@ Respond ONLY with valid JSON, no extra text:
             </div>
             {resumeErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{resumeErr}</div>}
 
+            {/* ── PASTE RESUME TEXT ── */}
+            {!pasteMode ? (
+              <button
+                className="btn-ghost"
+                style={{ marginTop: -4, marginBottom: 14 }}
+                onClick={() => setPasteMode(true)}
+              >
+                Or paste resume text instead
+              </button>
+            ) : (
+              <div style={{ marginBottom: 18 }}>
+                <label>Paste resume text</label>
+                <textarea
+                  rows={6}
+                  placeholder="Copy the text from your resume and paste it here..."
+                  value={pastedResume}
+                  onChange={e => setPastedResume(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button
+                    className="url-btn"
+                    onClick={submitPastedResume}
+                    disabled={resumeParsing || pastedResume.trim().length < 80}
+                  >
+                    {resumeParsing ? "Analyzing..." : "Analyze pasted resume"}
+                  </button>
+                  <button
+                    className="url-btn"
+                    onClick={() => { setPasteMode(false); setPastedResume(""); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* ── JOB MATCHES ── */}
-            {resumeFile && !resumeErr && (
+            {(resumeContext || resumeParsing) && !resumeErr && (
               <div className="jobs-panel">
                 <div className="jobs-title">Jobs that match your profile</div>
                 <div className="jobs-sub">
                   {jobMatches
                     ? "Open LinkedIn to apply · or practice the interview first"
+                    : jobMatchesErr
+                    ? "Couldn't load matches"
                     : "Finding your best matches..."}
                 </div>
-                {!jobMatches ? (
+                {jobMatchesErr ? (
+                  <div className="err-box" style={{ marginTop: 0 }}>{jobMatchesErr}</div>
+                ) : !jobMatches ? (
                   <div className="jobs-loading">
                     <div className="dot" /><div className="dot" /><div className="dot" />
                     Analyzing your profile...
@@ -1012,7 +1077,7 @@ Respond ONLY with valid JSON, no extra text:
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
-                placeholder={aiThinking ? `${DIFFICULTY_CONFIG[difficulty].name.split(" ")[0]} is typing...` : "Your answer..."}
+                placeholder={aiThinking ? `${DIFF_STATIC[difficulty].name.split(" ")[0]} is typing...` : "Your answer..."}
                 disabled={aiThinking}
               />
               <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>

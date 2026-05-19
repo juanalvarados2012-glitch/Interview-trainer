@@ -24,9 +24,16 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are a resume parser. Extract key information from this resume.
+            content: `You are a resume parser. Extract key information from the resume text provided.
+
+RULES:
+- targetRole: the candidate's current or most recent job title (e.g. "Bank Teller", "Marketing Manager"). Never invent a tech role unless the resume clearly describes tech work.
+- skills: 5 concrete skills the candidate actually demonstrates in the text. Quote/paraphrase only what is there.
+- summary: a 2-sentence factual summary of their actual industry, role, and years of experience based on the text.
+- If the text is incoherent, looks like PDF metadata/binary garbage, or doesn't describe a real career, respond with: {"error":"unreadable"}
+
 Respond ONLY with valid JSON, no extra text:
-{"targetRole":"most recent or target job title","skills":["skill1","skill2","skill3","skill4","skill5"],"summary":"2-sentence professional summary of this person's background and experience"}`,
+{"targetRole":"...","skills":["...","...","...","...","..."],"summary":"..."}`,
           },
           { role: "user", content: resumeText.slice(0, 6000) },
         ],
@@ -38,7 +45,13 @@ Respond ONLY with valid JSON, no extra text:
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("Could not parse resume content");
 
-    return res.status(200).json(JSON.parse(match[0]));
+    const parsed = JSON.parse(match[0]);
+    if (parsed.error === "unreadable" || !parsed.targetRole) {
+      return res.status(422).json({
+        error: "Couldn't recognize a real career in this text. Please paste the actual text of your resume.",
+      });
+    }
+    return res.status(200).json(parsed);
   } catch (e) {
     return res.status(500).json({ error: "Resume analysis failed: " + e.message });
   }
