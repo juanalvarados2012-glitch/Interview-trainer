@@ -645,45 +645,37 @@ Respond ONLY with valid JSON, no extra text:
     }
   };
 
-  // Heuristic: does this look like real resume prose (vs PDF binary garbage)?
-  const looksLikeResume = (text) => {
-    if (!text || text.length < 80) return false;
-    const words = text.match(/\b[a-zA-Z]{3,}\b/g) || [];
-    if (words.length < 40) return false;
-    // Real resumes are mostly letters/spaces. PDF binary garbage is mostly punctuation/operators.
-    const letterRatio = (text.match(/[a-zA-Z]/g)?.length || 0) / text.length;
-    return letterRatio >= 0.5;
+  const fetchWithTimeout = (url, options, ms = 30000) =>
+    Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out — please try again")), ms)),
+    ]);
+
+  const callParseResume = async (body) => {
+    const res = await fetchWithTimeout("/api/parse-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }, 45000);
+    const data = await res.json().catch(() => ({ error: "Invalid response from server" }));
+    if (!res.ok) throw new Error(data.error || `Parse failed (${res.status})`);
+    return data;
   };
 
-  const analyzeResumeText = async (resumeText) => {
+  const runResumeAnalysis = async (body) => {
     setResumeParsing(true);
     setResumeErr("");
     setJobMatches(null);
     setJobMatchesErr("");
     setResumeContext("");
 
-    if (!looksLikeResume(resumeText)) {
-      setResumeErr(
-        "Couldn't read enough text from this resume. Please copy the text from your resume and use the \"Paste resume text\" option below."
-      );
-      setResumeParsing(false);
-      return;
-    }
-
     let parsed = null;
     try {
-      const res = await fetch("/api/parse-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeText }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Parse failed");
-      parsed = data;
-      if (data.targetRole && !jobRole) setJobRole(data.targetRole);
+      parsed = await callParseResume(body);
+      if (parsed.targetRole && !jobRole) setJobRole(parsed.targetRole);
       const ctxParts = [];
-      if (data.summary) ctxParts.push(data.summary);
-      if (data.skills?.length) ctxParts.push("Key skills: " + data.skills.join(", "));
+      if (parsed.summary) ctxParts.push(parsed.summary);
+      if (parsed.skills?.length) ctxParts.push("Key skills: " + parsed.skills.join(", "));
       setResumeContext(ctxParts.join(" "));
     } catch (e) {
       setResumeErr(e.message);
@@ -692,13 +684,13 @@ Respond ONLY with valid JSON, no extra text:
 
     if (parsed) {
       try {
-        const r = await fetch("/api/find-jobs", {
+        const r = await fetchWithTimeout("/api/find-jobs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
-        });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || "Job search failed");
+        }, 30000);
+        const d = await r.json().catch(() => ({ error: "Invalid response from server" }));
+        if (!r.ok) throw new Error(d.error || `Job search failed (${r.status})`);
         if (d.jobs?.length) setJobMatches(d);
         else setJobMatchesErr("Couldn't generate job matches. Try again or paste more resume detail.");
       } catch (e) {
@@ -720,46 +712,22 @@ Respond ONLY with valid JSON, no extra text:
       setResumeParsing(false);
     };
     reader.onload = async (e) => {
-      const arrayBuffer = e.target.result;
-      let resumeText = "";
-
-      const extractWithTimeout = async () => {
-        const pdfjsLib = await import("pdfjs-dist");
-        // Worker is served from /public so we don't depend on a CDN that may stall.
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-        const parts = [];
-        for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          parts.push(content.items.map(item => item.str).join(" "));
-        }
-        return parts.join("\n").replace(/\s+/g, " ").trim().slice(0, 8000);
-      };
-
-      try {
-        resumeText = await Promise.race([
-          extractWithTimeout(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15000)),
-        ]);
-      } catch {}
-
-      if (!looksLikeResume(resumeText)) {
-        setResumeErr(
-          "Couldn't read text from this PDF. It may be image-only, scanned, or use non-standard fonts. Click \"Or paste resume text instead\" below and paste your resume."
-        );
+      // FileReader.readAsDataURL gives us "data:application/pdf;base64,XXXX"
+      const dataUrl = e.target.result || "";
+      const base64 = dataUrl.split(",")[1] || "";
+      if (!base64) {
+        setResumeErr("Could not read the file. Please try again.");
         setResumeParsing(false);
         return;
       }
-
-      await analyzeResumeText(resumeText);
+      await runResumeAnalysis({ resumePdfBase64: base64 });
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   };
 
   const submitPastedResume = () => {
     setResumeFile(null);
-    analyzeResumeText(pastedResume.trim());
+    runResumeAnalysis({ resumeText: pastedResume.trim() });
   };
 
   const restart = () => {

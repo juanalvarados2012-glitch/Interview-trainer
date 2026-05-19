@@ -1,4 +1,16 @@
-export const config = { api: { bodyParser: { sizeLimit: "2mb" } } };
+export const config = { api: { bodyParser: { sizeLimit: "8mb" } } };
+
+async function extractPdfText(base64) {
+  const { PDFParse } = await import("pdf-parse");
+  const buffer = Buffer.from(base64, "base64");
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    const { text } = await parser.getText();
+    return (text || "").replace(/\s+/g, " ").trim().slice(0, 8000);
+  } finally {
+    try { await parser.destroy(); } catch {}
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -6,11 +18,23 @@ export default async function handler(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
 
-  const { resumeText } = req.body;
+  let { resumeText, resumePdfBase64 } = req.body || {};
+
+  if (!resumeText && resumePdfBase64) {
+    try {
+      resumeText = await extractPdfText(resumePdfBase64);
+    } catch (e) {
+      return res.status(422).json({
+        error:
+          "Couldn't read the PDF on the server. Use the \"Paste resume text\" option below and paste the text from your resume.",
+      });
+    }
+  }
+
   if (!resumeText || resumeText.length < 50) {
     return res.status(422).json({
       error:
-        "Could not read this PDF. Try copying your resume text and pasting it in the Job Description field instead.",
+        "Couldn't extract enough text from this PDF. Use the \"Paste resume text\" option below and paste the text from your resume.",
     });
   }
 
