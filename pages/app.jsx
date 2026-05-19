@@ -398,10 +398,12 @@ INTERVIEW RULES (follow strictly):
   }, [jobRole, company, jdText, numQ, difficulty]);
 
   /* ── SCRAPE JOB URL ── */
+  const [scrapeNote, setScrapeNote] = useState("");
   const scrapeJob = async () => {
     if (!jobUrl.trim()) return;
     setScraping(true);
     setScrapeErr("");
+    setScrapeNote("");
     try {
       const res = await fetch("/api/scrape-job", {
         method: "POST",
@@ -413,6 +415,7 @@ INTERVIEW RULES (follow strictly):
       if (data.role) setJobRole(data.role);
       if (data.company) setCompany(data.company);
       if (data.description) setJdText(data.description);
+      if (data.note) setScrapeNote(data.note);
     } catch (e) {
       setScrapeErr(e.message);
     }
@@ -620,9 +623,9 @@ Respond ONLY with valid JSON, no extra text or markdown:
               <input
                 className="url-input"
                 value={jobUrl}
-                onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); }}
+                onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); setScrapeNote(""); }}
                 onKeyDown={e => e.key === "Enter" && scrapeJob()}
-                placeholder="https://linkedin.com/jobs/... or any job posting link"
+                placeholder="Paste a job posting link (works best with company career pages, Greenhouse, Lever, Workday)"
               />
               <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
                 {scraping ? "Analyzing..." : "✦ Analyze"}
@@ -635,6 +638,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
               </div>
             )}
             {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
+            {scrapeNote && <div className="tip-box" style={{ marginTop: -10, marginBottom: 14 }}>💡 {scrapeNote}</div>}
 
             <div className="url-divider">
               <div className="url-divider-line" />
