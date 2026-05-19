@@ -613,42 +613,54 @@ Respond ONLY with valid JSON, no extra text or markdown:
     }
   };
 
-  const uploadResume = async (file) => {
+  const uploadResume = (file) => {
     if (!file) return;
     setResumeParsing(true);
     setResumeErr("");
     setJobMatches(null);
-    const formData = new FormData();
-    formData.append("resume", file);
-    let parsed = null;
-    try {
-      const res = await fetch("/api/parse-resume", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Parse failed");
-      if (data.targetRole && !jobRole) setJobRole(data.targetRole);
-      if (data.summary) setJdText(prev =>
-        prev ? prev + "\n\nCandidate background: " + data.summary : "Candidate background: " + data.summary
-      );
-      if (data.skills?.length) setJdText(prev =>
-        prev + "\nKey skills: " + data.skills.join(", ")
-      );
-      parsed = data;
-    } catch (e) {
-      setResumeErr(e.message);
-    }
-    setResumeParsing(false);
 
-    // Completely separate from the try-catch above — errors here never affect resumeErr
-    if (parsed) {
-      fetch("/api/find-jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
-      })
-        .then(r => r.json())
-        .then(d => { if (d.platforms) setJobMatches(d); })
-        .catch(() => {});
-    }
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setResumeErr("Could not read the file. Please try again.");
+      setResumeParsing(false);
+    };
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(",")[1];
+      let parsed = null;
+      try {
+        const res = await fetch("/api/parse-resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileBase64: base64 }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Parse failed");
+        if (data.targetRole && !jobRole) setJobRole(data.targetRole);
+        if (data.summary) setJdText(prev =>
+          prev ? prev + "\n\nCandidate background: " + data.summary : "Candidate background: " + data.summary
+        );
+        if (data.skills?.length) setJdText(prev =>
+          prev + "\nKey skills: " + data.skills.join(", ")
+        );
+        parsed = data;
+      } catch (e) {
+        setResumeErr(e.message);
+      }
+      setResumeParsing(false);
+
+      // Completely separate — errors here never affect resumeErr
+      if (parsed) {
+        fetch("/api/find-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
+        })
+          .then(r => r.json())
+          .then(d => { if (d.platforms) setJobMatches(d); })
+          .catch(() => {});
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const restart = () => {
