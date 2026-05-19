@@ -156,19 +156,19 @@ const css = `
   .hist-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px}
   /* ── JOB MATCHES ── */
   .jobs-panel{background:#080812;border:1px solid #1a1a30;border-radius:16px;padding:18px;margin-bottom:18px;animation:fadeUp .3s ease}
-  .jobs-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
   .jobs-title{font-size:.82rem;font-weight:700}
-  .jobs-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px}
-  .jobs-titles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-  .jobs-title-chip{background:#0d0d22;border:1px solid #1a1a40;border-radius:8px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:.72rem;color:#8080cc}
-  .jobs-platforms{display:flex;flex-direction:column;gap:8px}
-  .jobs-platform{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px}
-  .jobs-platform-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .jobs-platform-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.6rem;font-weight:700;flex-shrink:0}
-  .jobs-platform-name{font-size:.82rem;font-weight:700}
-  .jobs-links{display:flex;flex-wrap:wrap;gap:6px}
-  .jobs-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-family:'DM Mono',monospace;font-size:.72rem;text-decoration:none;transition:opacity .2s;border:1px solid transparent}
-  .jobs-link:hover{opacity:.75}
+  .jobs-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px;margin-bottom:14px}
+  .jobs-list{display:flex;flex-direction:column;gap:8px}
+  .job-card{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .job-card-num{width:26px;height:26px;border-radius:50%;background:#0d0d22;border:1px solid #1a1a40;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.68rem;color:#4040a0;flex-shrink:0;font-weight:700}
+  .job-card-info{flex:1;min-width:0}
+  .job-card-title{font-size:.88rem;font-weight:700;margin-bottom:3px}
+  .job-card-reason{font-family:'DM Mono',monospace;font-size:.7rem;color:#555;line-height:1.4}
+  .job-card-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+  .job-card-link{display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.7rem;color:#4040a0;background:#0a0a1f;border:1px solid #1a1a40;text-decoration:none;transition:all .2s;white-space:nowrap}
+  .job-card-link:hover{border-color:#3030a0;color:#8080ff}
+  .job-card-practice{display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.7rem;color:#4ecc96;background:#051510;border:1px solid #4ecc9630;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .job-card-practice:hover{border-color:#4ecc9660;background:#0a2a18}
   .jobs-loading{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;display:flex;align-items:center;gap:8px}
   /* ── BACK LINK ── */
   .back-link{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#333;text-decoration:none;margin-bottom:24px;transition:color .2s}
@@ -676,7 +676,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
           body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
         })
           .then(r => r.json())
-          .then(d => { if (d.platforms) setJobMatches(d); })
+          .then(d => { if (d.jobs) setJobMatches(d); })
           .catch(() => {});
       }
     };
@@ -794,64 +794,47 @@ Respond ONLY with valid JSON, no extra text or markdown:
             {resumeErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{resumeErr}</div>}
 
             {/* ── JOB MATCHES ── */}
-            {resumeFile && (
+            {resumeFile && !resumeErr && (
               <div className="jobs-panel">
-                <div className="jobs-header">
-                  <div>
-                    <div className="jobs-title">Jobs that match your profile</div>
-                    <div className="jobs-sub">
-                      {jobMatches ? "Click any link to search on that platform" : "Finding matching roles..."}
-                    </div>
-                  </div>
+                <div className="jobs-title">Jobs that match your profile</div>
+                <div className="jobs-sub">
+                  {jobMatches
+                    ? "Open LinkedIn to apply · or practice the interview first"
+                    : "Finding your best matches..."}
                 </div>
                 {!jobMatches ? (
                   <div className="jobs-loading">
                     <div className="dot" /><div className="dot" /><div className="dot" />
-                    Searching across platforms...
+                    Analyzing your profile...
                   </div>
                 ) : (
-                  <>
-                    {jobMatches.titles?.length > 0 && (
-                      <div className="jobs-titles">
-                        {jobMatches.titles.map(t => (
-                          <span className="jobs-title-chip" key={t}>{t}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="jobs-platforms">
-                      {jobMatches.platforms?.map(p => (
-                        <div className="jobs-platform" key={p.name}>
-                          <div className="jobs-platform-header">
-                            <div
-                              className="jobs-platform-icon"
-                              style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
-                            >
-                              {p.icon}
-                            </div>
-                            <div className="jobs-platform-name">{p.name}</div>
-                          </div>
-                          <div className="jobs-links">
-                            {p.links.map(l => (
-                              <a
-                                key={l.url}
-                                href={l.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="jobs-link"
-                                style={{
-                                  background: p.bg,
-                                  border: `1px solid ${p.border}`,
-                                  color: p.color,
-                                }}
-                              >
-                                {l.label} →
-                              </a>
-                            ))}
-                          </div>
+                  <div className="jobs-list">
+                    {jobMatches.jobs?.map((j, i) => (
+                      <div className="job-card" key={i}>
+                        <div className="job-card-num">{i + 1}</div>
+                        <div className="job-card-info">
+                          <div className="job-card-title">{j.title}</div>
+                          <div className="job-card-reason">{j.reason}</div>
                         </div>
-                      ))}
-                    </div>
-                  </>
+                        <div className="job-card-actions">
+                          <a
+                            href={j.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="job-card-link"
+                          >
+                            LinkedIn →
+                          </a>
+                          <button
+                            className="job-card-practice"
+                            onClick={() => setJobRole(j.title)}
+                          >
+                            Practice →
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}

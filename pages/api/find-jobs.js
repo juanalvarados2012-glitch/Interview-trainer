@@ -16,23 +16,25 @@ export default async function handler(req, res) {
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 400,
+        max_tokens: 600,
         messages: [
           {
             role: "system",
-            content: `You are a job search expert. Based on a candidate's profile, suggest the best job search terms.
+            content: `You are a career advisor. Based on a candidate's profile, suggest the 5 best matching job titles they should apply for right now.
 Respond ONLY with valid JSON, no extra text:
 {
-  "titles": ["Best Job Title 1", "Best Job Title 2", "Best Job Title 3"],
-  "keywords": "2-4 word search phrase that best captures this candidate's specialty"
+  "jobs": [
+    { "title": "Job Title Here", "reason": "One specific sentence explaining why this fits their background" },
+    { "title": "Job Title 2", "reason": "..." },
+    { "title": "Job Title 3", "reason": "..." },
+    { "title": "Job Title 4", "reason": "..." },
+    { "title": "Job Title 5", "reason": "..." }
+  ]
 }
-Rules: titles should be real job titles that appear on LinkedIn/Indeed. Max 3 titles. Keep each title under 5 words.`,
+Rules: titles must be real job titles that appear on LinkedIn. Keep each title under 6 words. Reason must reference specific skills or experience from their profile.`,
           },
           { role: "user", content: input },
         ],
@@ -44,89 +46,16 @@ Rules: titles should be real job titles that appear on LinkedIn/Indeed. Max 3 ti
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("Could not parse response");
 
-    const { titles = [], keywords = role || "" } = JSON.parse(match[0]);
-    const primary = titles[0] || role || keywords;
-
+    const { jobs = [] } = JSON.parse(match[0]);
     const encode = (s) => encodeURIComponent(s);
 
-    const platforms = [
-      {
-        name: "LinkedIn",
-        icon: "in",
-        color: "#0a66c2",
-        bg: "#0a1628",
-        border: "#0a3060",
-        links: titles.slice(0, 2).map((t) => ({
-          label: t,
-          url: `https://www.linkedin.com/jobs/search/?keywords=${encode(t)}&f_TPR=r604800`,
-        })),
-      },
-      {
-        name: "Indeed",
-        icon: "id",
-        color: "#003a9b",
-        bg: "#080a1a",
-        border: "#0a1240",
-        links: titles.slice(0, 2).map((t) => ({
-          label: t,
-          url: `https://www.indeed.com/jobs?q=${encode(t)}&sort=date`,
-        })),
-      },
-      {
-        name: "Glassdoor",
-        icon: "gd",
-        color: "#0caa41",
-        bg: "#080f0a",
-        border: "#0a2a14",
-        links: [
-          {
-            label: primary,
-            url: `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encode(primary)}&clickSource=searchBtn`,
-          },
-        ],
-      },
-      {
-        name: "Remote OK",
-        icon: "rm",
-        color: "#6060cc",
-        bg: "#0a0a1a",
-        border: "#1a1a40",
-        links: [
-          {
-            label: `Remote ${primary}`,
-            url: `https://remoteok.com/remote-${keywords.toLowerCase().replace(/\s+/g, "-")}-jobs`,
-          },
-        ],
-      },
-      {
-        name: "Wellfound",
-        icon: "wf",
-        color: "#f04e23",
-        bg: "#1a0a06",
-        border: "#3a1408",
-        links: [
-          {
-            label: `${primary} at startups`,
-            url: `https://wellfound.com/role/r/${keywords.toLowerCase().replace(/\s+/g, "-")}`,
-          },
-        ],
-      },
-      {
-        name: "Y Combinator",
-        icon: "yc",
-        color: "#e8611a",
-        bg: "#1a0d06",
-        border: "#3a1a08",
-        links: [
-          {
-            label: primary,
-            url: `https://www.ycombinator.com/jobs?query=${encode(primary)}`,
-          },
-        ],
-      },
-    ];
-
-    return res.status(200).json({ titles, keywords, platforms });
+    return res.status(200).json({
+      jobs: jobs.slice(0, 5).map(j => ({
+        title: j.title,
+        reason: j.reason,
+        link: `https://www.linkedin.com/jobs/search/?keywords=${encode(j.title)}&f_TPR=r604800`,
+      })),
+    });
   } catch (e) {
     return res.status(500).json({ error: "Job search failed: " + e.message });
   }
