@@ -4,6 +4,19 @@ import pdfParse from "pdf-parse";
 
 export const config = { api: { bodyParser: false } };
 
+// Rough text fallback: extract printable ASCII runs from the raw buffer.
+// Catches PDFs that pdf-parse can't handle (encrypted, unusual encoding, iOS-specific).
+function extractRawText(buffer) {
+  const raw = buffer.toString("latin1");
+  const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
+  return chunks
+    .filter(c => /[a-zA-Z]{3,}/.test(c))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 8000);
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -21,17 +34,21 @@ export default async function handler(req, res) {
   const file = files.resume?.[0];
   if (!file) return res.status(400).json({ error: "No file uploaded" });
 
+  const buffer = fs.readFileSync(file.filepath);
+
   let text = "";
   try {
-    const buffer = fs.readFileSync(file.filepath);
-    const parsed = await pdfParse(buffer);
+    const parsed = await pdfParse(buffer, { max: 0 });
     text = parsed.text?.trim() || "";
-  } catch (e) {
-    return res.status(422).json({ error: "Could not read PDF: " + e.message });
+  } catch (_) {
+    // pdf-parse failed (encrypted PDF, unusual encoding, etc.) — try raw extraction
+    text = extractRawText(buffer);
   }
 
   if (text.length < 50) {
-    return res.status(422).json({ error: "PDF appears empty or unreadable" });
+    return res.status(422).json({
+      error: "Could not read this PDF. Try copying your resume text and pasting it in the Job Description field instead.",
+    });
   }
 
   try {

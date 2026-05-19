@@ -620,6 +620,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setJobMatches(null);
     const formData = new FormData();
     formData.append("resume", file);
+    let parsed = null;
     try {
       const res = await fetch("/api/parse-resume", { method: "POST", body: formData });
       const data = await res.json();
@@ -631,19 +632,23 @@ Respond ONLY with valid JSON, no extra text or markdown:
       if (data.skills?.length) setJdText(prev =>
         prev + "\nKey skills: " + data.skills.join(", ")
       );
-      // Fire job search in parallel — don't block the UI
-      fetch("/api/find-jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: data.targetRole, skills: data.skills, summary: data.summary }),
-      })
-        .then(r => r.json())
-        .then(d => { if (d.platforms) setJobMatches(d); })
-        .catch(() => {});
+      parsed = data;
     } catch (e) {
       setResumeErr(e.message);
     }
     setResumeParsing(false);
+
+    // Completely separate from the try-catch above — errors here never affect resumeErr
+    if (parsed) {
+      fetch("/api/find-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d.platforms) setJobMatches(d); })
+        .catch(() => {});
+    }
   };
 
   const restart = () => {
@@ -735,12 +740,14 @@ Respond ONLY with valid JSON, no extra text or markdown:
                   if (f) { setResumeFile(f); uploadResume(f); }
                 }}
               />
-              <span className="resume-icon">{resumeParsing ? "⏳" : resumeFile ? "📄" : "📎"}</span>
-              <div className="resume-text">
+              <span className="resume-icon">{resumeParsing ? "⏳" : resumeFile && !resumeErr ? "📄" : resumeFile ? "⚠️" : "📎"}</span>
+                <div className="resume-text">
                 {resumeParsing ? (
                   <><strong>Analyzing resume...</strong>Extracting your experience and skills</>
-                ) : resumeFile ? (
+                ) : resumeFile && !resumeErr ? (
                   <><strong>{resumeFile.name}</strong>Resume parsed — fields auto-filled below</>
+                ) : resumeFile ? (
+                  <><strong>{resumeFile.name}</strong>Parsing failed — see error below</>
                 ) : (
                   <><strong>Upload your resume (optional)</strong>PDF · auto-fills role and skills</>
                 )}
