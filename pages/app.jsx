@@ -159,15 +159,15 @@ const css = `
   .jobs-title{font-size:.82rem;font-weight:700}
   .jobs-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px;margin-bottom:14px}
   .jobs-list{display:flex;flex-direction:column;gap:8px}
-  .job-card{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px}
-  .job-card-num{width:26px;height:26px;border-radius:50%;background:#0d0d22;border:1px solid #1a1a40;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.68rem;color:#4040a0;flex-shrink:0;font-weight:700}
-  .job-card-info{flex:1;min-width:0}
-  .job-card-title{font-size:.88rem;font-weight:700;margin-bottom:3px}
-  .job-card-reason{font-family:'DM Mono',monospace;font-size:.7rem;color:#555;line-height:1.4}
-  .job-card-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
-  .job-card-link{display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.7rem;color:#4040a0;background:#0a0a1f;border:1px solid #1a1a40;text-decoration:none;transition:all .2s;white-space:nowrap}
+  .job-card{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+  .job-card-top{display:flex;align-items:center;gap:10px}
+  .job-card-num{width:24px;height:24px;border-radius:50%;background:#0d0d22;border:1px solid #1a1a40;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.65rem;color:#4040a0;flex-shrink:0;font-weight:700}
+  .job-card-title{font-size:.88rem;font-weight:700}
+  .job-card-reason{font-family:'DM Mono',monospace;font-size:.7rem;color:#555;line-height:1.4;padding-left:34px}
+  .job-card-actions{display:flex;gap:6px;padding-left:34px}
+  .job-card-link{display:inline-flex;align-items:center;padding:7px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.72rem;color:#4040a0;background:#0a0a1f;border:1px solid #1a1a40;text-decoration:none;transition:all .2s;white-space:nowrap}
   .job-card-link:hover{border-color:#3030a0;color:#8080ff}
-  .job-card-practice{display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.7rem;color:#4ecc96;background:#051510;border:1px solid #4ecc9630;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .job-card-practice{display:inline-flex;align-items:center;padding:7px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.72rem;color:#4ecc96;background:#051510;border:1px solid #4ecc9630;cursor:pointer;transition:all .2s;white-space:nowrap}
   .job-card-practice:hover{border-color:#4ecc9660;background:#0a2a18}
   .jobs-loading{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;display:flex;align-items:center;gap:8px}
   /* ── BACK LINK ── */
@@ -384,6 +384,7 @@ export default function App() {
   const [evalLoading, setEvalLoading] = useState(false);
 
   const chatEndRef = useRef(null);
+  const jobRoleRef = useRef(null);
   const { speak, stop, speaking, unlock } = useTTS();
   const { recording, supported: micOk, startRec, stopRec } = useSTT();
 
@@ -638,9 +639,10 @@ Respond ONLY with valid JSON, no extra text or markdown:
         .trim()
         .slice(0, 8000);
 
-      if (resumeText.length < 50) {
+      const realWordCount = (resumeText.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
+      if (resumeText.length < 50 || realWordCount < 25) {
         setResumeErr(
-          "Could not read this PDF. Try copying your resume text and pasting it in the Job Description field instead."
+          "Could not read this PDF — it may use encrypted or non-standard fonts. Try copying your resume text and pasting it in the Job Description field instead."
         );
         setResumeParsing(false);
         return;
@@ -751,7 +753,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
             <div className="row">
               <div className="field">
                 <label>Position</label>
-                <input value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder="e.g. UX/UI Designer" />
+                <input ref={jobRoleRef} value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder="e.g. UX/UI Designer" />
               </div>
               <div className="field">
                 <label>Company</label>
@@ -811,11 +813,11 @@ Respond ONLY with valid JSON, no extra text or markdown:
                   <div className="jobs-list">
                     {jobMatches.jobs?.map((j, i) => (
                       <div className="job-card" key={i}>
-                        <div className="job-card-num">{i + 1}</div>
-                        <div className="job-card-info">
+                        <div className="job-card-top">
+                          <div className="job-card-num">{i + 1}</div>
                           <div className="job-card-title">{j.title}</div>
-                          <div className="job-card-reason">{j.reason}</div>
                         </div>
+                        <div className="job-card-reason">{j.reason}</div>
                         <div className="job-card-actions">
                           <a
                             href={j.link}
@@ -827,7 +829,13 @@ Respond ONLY with valid JSON, no extra text or markdown:
                           </a>
                           <button
                             className="job-card-practice"
-                            onClick={() => setJobRole(j.title)}
+                            onClick={() => {
+                              setJobRole(j.title);
+                              setTimeout(() => {
+                                jobRoleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                jobRoleRef.current?.focus();
+                              }, 80);
+                            }}
                           >
                             Practice →
                           </button>
