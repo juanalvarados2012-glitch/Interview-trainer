@@ -154,26 +154,35 @@ const css = `
   }
 `;
 
-const ALL_FEATS = [
-  "Unlimited interviews",
-  "Voice-enabled AI interviewer",
-  "Job URL analyzer — paste any posting",
-  "Resume upload & job matching",
-  "Real-time coach tips after each answer",
-  "All 3 difficulty levels — Easy, Standard, Hard",
-  "Up to 10 questions per session",
-  "Interview history & progress tracking",
-  "Detailed score report with specific feedback",
+const FREE_FEATS = [
+  { on: true,  text: "6 interviews per month" },
+  { on: true,  text: "Voice-enabled AI interviewer" },
+  { on: true,  text: "Job URL analyzer" },
+  { on: true,  text: "Real-time coach tips" },
+  { on: true,  text: "5 questions per interview" },
+  { on: false, text: "Hard & Easy difficulty levels" },
+  { on: false, text: "Resume upload & job matching" },
+  { on: false, text: "Unlimited interviews" },
+  { on: false, text: "Interview history & tracking" },
+];
+
+const PRO_FEATS = [
+  { text: "Everything in Free" },
+  { text: "Unlimited interviews per month" },
+  { text: "Up to 10 questions per session" },
+  { text: "All 3 difficulty levels — Easy, Standard, Hard" },
+  { text: "Resume upload & job matching" },
+  { text: "Interview history & progress tracking" },
 ];
 
 
 const FEATURES = [
-  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud and listens to your answers — just like the real thing." },
-  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL and get questions tailored exactly to that role and company." },
-  { icon: "📊", title: "Honest scoring & feedback", desc: "Get scored on a calibrated rubric — not inflated praise. Specific strengths and concrete improvements." },
-  { icon: "⚡", title: "3 difficulty levels", desc: "Sam (encouraging), Jordan (balanced), or Morgan (relentless VP who pushes back on everything)." },
-  { icon: "💬", title: "Real-time coach tips", desc: "After each answer, your AI coach shows what worked and the single most impactful thing to improve." },
-  { icon: "📄", title: "Resume-aware prep + job matching", desc: "Upload your CV to get tailored questions and instant job links from LinkedIn, Indeed, Glassdoor, and more." },
+  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud and listens to your answers — just like the real thing.", free: true },
+  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL and get questions tailored exactly to that role and company.", free: true },
+  { icon: "📊", title: "Honest scoring & feedback", desc: "Get scored on a calibrated rubric — not inflated praise. Specific strengths and concrete improvements.", free: true },
+  { icon: "⚡", title: "3 difficulty levels", desc: "Sam (encouraging), Jordan (balanced), or Morgan (relentless VP who pushes back on everything).", free: false },
+  { icon: "💬", title: "Real-time coach tips", desc: "After each answer, your AI coach shows what worked and the single most impactful thing to improve.", free: true },
+  { icon: "📄", title: "Resume upload & job matching", desc: "Upload your CV to get tailored questions and instant job links from LinkedIn, Indeed, Glassdoor, and more.", free: false },
 ];
 
 const STEPS = [
@@ -190,10 +199,10 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "Is it really free right now?", a: "Yes — full access during beta, no credit card needed. We're finishing payment integration. Drop your email to get notified when paid plans launch (early users get a discount)." },
+  { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with up to 5 questions each, Standard difficulty, voice, and job URL analyzer. Pro unlocks unlimited interviews, up to 10 questions, all 3 difficulty levels, resume upload with job matching, and history tracking." },
   { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." },
-  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL and the AI analyzes the exact requirements and skills to generate highly relevant questions. Upload your resume and it also tailors questions to your specific background." },
-  { q: "What will paid plans cost?", a: "We're planning a one-time payment (no subscription) around $29 for lifetime access. Beta users who sign up now will get a discount." },
+  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL and the AI analyzes the exact requirements and skills to generate highly relevant questions. Pro users can also upload a resume for even more targeted prep." },
+  { q: "When is Pro launching?", a: "Soon — we're finishing payment integration. Drop your email in the notify field and you'll be first to know, with a launch discount." },
 ];
 
 export default function Landing() {
@@ -239,17 +248,22 @@ export default function Landing() {
 
         <div className="hero-btns">
           <Link href="/app" className="btn-primary">
-            Start practicing — it&apos;s free →
+            Start for free →
           </Link>
+          <div className="btn-coming">
+            Get Pro access
+            <span className="coming-badge">Coming soon</span>
+          </div>
         </div>
 
         <div className="hero-free-note">
-          Full access during beta — no credit card, no limits.
+          Free plan includes voice, job URL analyzer, and coach tips.<br />
+          No credit card needed.
         </div>
 
         <div className="hero-proof">
           <span className="hero-proof-item">✓ No sign-up required</span>
-          <span className="hero-proof-item">✓ Voice + microphone</span>
+          <span className="hero-proof-item">✓ Works on mobile</span>
           <span className="hero-proof-item">✓ Any job posting</span>
         </div>
       </section>
@@ -305,10 +319,10 @@ export default function Landing() {
         <div className="section-inner">
           <div className="section-tag">// Features</div>
           <h2>Not a quiz app. A real<br /><span className="gradient-text">conversation</span></h2>
-          <p className="section-sub">Back-and-forth with an interviewer who actually challenges you — all features included during beta.</p>
+          <p className="section-sub">Back-and-forth with an interviewer who actually challenges you — features marked PRO are coming in the paid plan.</p>
           <div className="features-grid">
             {FEATURES.map((f) => (
-              <div className="feature-card" key={f.title}>
+              <div className={`feature-card${f.free ? "" : " locked"}`} key={f.title}>
                 <span className="feature-icon">{f.icon}</span>
                 <div className="feature-title">{f.title}</div>
                 <div className="feature-desc">{f.desc}</div>
@@ -368,41 +382,58 @@ export default function Landing() {
             Start free.<br /><span className="gradient-text">Upgrade when ready.</span>
           </h2>
           <p className="section-sub" style={{ margin: "0 auto 48px", textAlign: "center" }}>
-            Full access during beta — free while we set up payments.
-            Drop your email to get notified when paid plans launch (and get a discount).
+            Start free. Pro is coming soon — drop your email to be notified first and get a launch discount.
           </p>
-          <div className="plan-card pro" style={{ maxWidth: 520, margin: "0 auto" }}>
-            <div className="plan-card-glow" />
-            <div className="plan-label pro">Beta — full access</div>
-            <div className="plan-name">Everything included</div>
-            <div className="plan-price pro-price">$0</div>
-            <div className="plan-period">free during beta · paid plans coming soon</div>
-            <div className="plan-feats">
-              {ALL_FEATS.map((f) => (
-                <div className="plan-feat on" key={f}>
-                  <span className="plan-feat-icon" style={{ color: "#4ecc96" }}>✓</span>
-                  {f}
-                </div>
-              ))}
+          <div className="pricing-grid">
+            {/* FREE */}
+            <div className="plan-card">
+              <div className="plan-label free">Free</div>
+              <div className="plan-name">Starter</div>
+              <div className="plan-price">$0</div>
+              <div className="plan-period">forever · no card needed</div>
+              <div className="plan-feats">
+                {FREE_FEATS.map((f) => (
+                  <div className={`plan-feat ${f.on ? "on" : "off"}`} key={f.text}>
+                    <span className="plan-feat-icon">{f.on ? "✓" : "–"}</span>
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+              <Link href="/app" className="plan-btn free-btn">Start practicing free →</Link>
             </div>
-            <Link href="/app" className="plan-btn free-btn" style={{ textDecoration: "none", marginBottom: 12 }}>
-              Start practicing free →
-            </Link>
-            {notifySent ? (
-              <div className="notify-sent">You&apos;re on the list — we&apos;ll email you when paid plans launch!</div>
-            ) : (
-              <form className="notify-form" onSubmit={handleNotify}>
-                <input
-                  className="notify-input"
-                  type="email"
-                  placeholder="Email for launch notification + discount"
-                  value={notifyEmail}
-                  onChange={e => setNotifyEmail(e.target.value)}
-                />
-                <button type="submit" className="notify-send">Notify me</button>
-              </form>
-            )}
-            <div className="plan-note">No credit card · No sign-up · Instant access</div>
+
+            {/* PRO */}
+            <div className="plan-card pro">
+              <div className="plan-card-glow" />
+              <div className="plan-label pro">Pro · Coming soon</div>
+              <div className="plan-name">Unlimited</div>
+              <div className="plan-price pro-price">$29</div>
+              <div className="plan-period">one-time · no subscription ever</div>
+              <div className="plan-feats">
+                {PRO_FEATS.map((f) => (
+                  <div className="plan-feat on" key={f.text}>
+                    <span className="plan-feat-icon" style={{ color: "#6060cc" }}>✓</span>
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+              <button className="plan-btn pro-btn" disabled>Coming soon</button>
+              {notifySent ? (
+                <div className="notify-sent">You&apos;re on the list — we&apos;ll email you at launch!</div>
+              ) : (
+                <form className="notify-form" onSubmit={handleNotify}>
+                  <input
+                    className="notify-input"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={notifyEmail}
+                    onChange={e => setNotifyEmail(e.target.value)}
+                  />
+                  <button type="submit" className="notify-send">Notify me</button>
+                </form>
+              )}
+              <div className="plan-note">One-time payment · Instant access · No subscription</div>
+            </div>
           </div>
         </div>
       </section>
@@ -431,7 +462,7 @@ export default function Landing() {
         <div className="cta-inner">
           <h2>Ready to stop winging it?</h2>
           <p className="cta-sub">
-            Full access during beta — unlimited interviews, all features, no sign-up.<br />
+            Start free — no sign-up, no credit card.<br />
             Your AI interviewer is ready right now.
           </p>
           <Link href="/app" className="btn-primary" style={{ margin: "0 auto" }}>
