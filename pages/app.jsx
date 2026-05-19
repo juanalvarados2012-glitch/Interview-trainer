@@ -625,13 +625,33 @@ Respond ONLY with valid JSON, no extra text or markdown:
       setResumeParsing(false);
     };
     reader.onload = async (e) => {
-      const base64 = e.target.result.split(",")[1];
+      // Extract readable text from PDF bytes directly in the browser.
+      // This avoids both iOS Safari's FormData bug and serverless PDF-parse issues.
+      const bytes = new Uint8Array(e.target.result);
+      const raw = Array.from(bytes, b => (b >= 32 && b <= 126) || b === 10 || b === 13 || b === 9
+        ? String.fromCharCode(b) : " ").join("");
+      const chunks = raw.match(/[\x20-\x7E\n\r\t]{4,}/g) || [];
+      const resumeText = chunks
+        .filter(c => /[a-zA-Z]{3,}/.test(c))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 8000);
+
+      if (resumeText.length < 50) {
+        setResumeErr(
+          "Could not read this PDF. Try copying your resume text and pasting it in the Job Description field instead."
+        );
+        setResumeParsing(false);
+        return;
+      }
+
       let parsed = null;
       try {
         const res = await fetch("/api/parse-resume", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileBase64: base64 }),
+          body: JSON.stringify({ resumeText }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Parse failed");
@@ -660,7 +680,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
           .catch(() => {});
       }
     };
-    reader.readAsDataURL(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const restart = () => {
