@@ -154,6 +154,22 @@ const css = `
   .hist-info{flex:1;min-width:0}
   .hist-role{font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hist-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px}
+  /* ── JOB MATCHES ── */
+  .jobs-panel{background:#080812;border:1px solid #1a1a30;border-radius:16px;padding:18px;margin-bottom:18px;animation:fadeUp .3s ease}
+  .jobs-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .jobs-title{font-size:.82rem;font-weight:700}
+  .jobs-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px}
+  .jobs-titles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .jobs-title-chip{background:#0d0d22;border:1px solid #1a1a40;border-radius:8px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:.72rem;color:#8080cc}
+  .jobs-platforms{display:flex;flex-direction:column;gap:8px}
+  .jobs-platform{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px}
+  .jobs-platform-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .jobs-platform-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.6rem;font-weight:700;flex-shrink:0}
+  .jobs-platform-name{font-size:.82rem;font-weight:700}
+  .jobs-links{display:flex;flex-wrap:wrap;gap:6px}
+  .jobs-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-family:'DM Mono',monospace;font-size:.72rem;text-decoration:none;transition:opacity .2s;border:1px solid transparent}
+  .jobs-link:hover{opacity:.75}
+  .jobs-loading{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;display:flex;align-items:center;gap:8px}
   /* ── BACK LINK ── */
   .back-link{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#333;text-decoration:none;margin-bottom:24px;transition:color .2s}
   .back-link:hover{color:#6060cc}
@@ -350,6 +366,7 @@ export default function App() {
   // Resume upload
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeParsing, setResumeParsing] = useState(false);
+  const [jobMatches, setJobMatches] = useState(null);
   const [resumeErr, setResumeErr] = useState("");
   const resumeInputRef = useRef(null);
 
@@ -600,6 +617,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     if (!file) return;
     setResumeParsing(true);
     setResumeErr("");
+    setJobMatches(null);
     const formData = new FormData();
     formData.append("resume", file);
     try {
@@ -613,6 +631,15 @@ Respond ONLY with valid JSON, no extra text or markdown:
       if (data.skills?.length) setJdText(prev =>
         prev + "\nKey skills: " + data.skills.join(", ")
       );
+      // Fire job search in parallel — don't block the UI
+      fetch("/api/find-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: data.targetRole, skills: data.skills, summary: data.summary }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d.platforms) setJobMatches(d); })
+        .catch(() => {});
     } catch (e) {
       setResumeErr(e.message);
     }
@@ -627,7 +654,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
-    setResumeFile(null); setResumeErr("");
+    setResumeFile(null); setResumeErr(""); setJobMatches(null);
   };
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
@@ -726,6 +753,69 @@ Respond ONLY with valid JSON, no extra text or markdown:
               )}
             </div>
             {resumeErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{resumeErr}</div>}
+
+            {/* ── JOB MATCHES ── */}
+            {resumeFile && (
+              <div className="jobs-panel">
+                <div className="jobs-header">
+                  <div>
+                    <div className="jobs-title">Jobs that match your profile</div>
+                    <div className="jobs-sub">
+                      {jobMatches ? "Click any link to search on that platform" : "Finding matching roles..."}
+                    </div>
+                  </div>
+                </div>
+                {!jobMatches ? (
+                  <div className="jobs-loading">
+                    <div className="dot" /><div className="dot" /><div className="dot" />
+                    Searching across platforms...
+                  </div>
+                ) : (
+                  <>
+                    {jobMatches.titles?.length > 0 && (
+                      <div className="jobs-titles">
+                        {jobMatches.titles.map(t => (
+                          <span className="jobs-title-chip" key={t}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="jobs-platforms">
+                      {jobMatches.platforms?.map(p => (
+                        <div className="jobs-platform" key={p.name}>
+                          <div className="jobs-platform-header">
+                            <div
+                              className="jobs-platform-icon"
+                              style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
+                            >
+                              {p.icon}
+                            </div>
+                            <div className="jobs-platform-name">{p.name}</div>
+                          </div>
+                          <div className="jobs-links">
+                            {p.links.map(l => (
+                              <a
+                                key={l.url}
+                                href={l.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="jobs-link"
+                                style={{
+                                  background: p.bg,
+                                  border: `1px solid ${p.border}`,
+                                  color: p.color,
+                                }}
+                              >
+                                {l.label} →
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="field">
               <label>Job Description</label>
