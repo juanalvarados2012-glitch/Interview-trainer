@@ -645,33 +645,35 @@ Respond ONLY with valid JSON, no extra text:
     }
   };
 
-  const fetchWithTimeout = (url, options, ms = 30000) =>
-    Promise.race([
-      fetch(url, options),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out — please try again")), ms)),
-    ]);
+  const fetchWithTimeout = async (url, options, ms) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const res = await fetch(url, { ...options, signal: ctrl.signal });
+      return res;
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("Request timed out");
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
 
-  const callParseResume = async (body) => {
-    const res = await fetchWithTimeout("/api/parse-resume", {
+  const postJSON = async (url, body, ms) => {
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }, 45000);
-    const data = await res.json().catch(() => ({ error: "Invalid response from server" }));
-    if (!res.ok) throw new Error(data.error || `Parse failed (${res.status})`);
+    }, ms);
+    const data = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
     return data;
   };
 
-  const runResumeAnalysis = async (body) => {
-    setResumeParsing(true);
-    setResumeErr("");
-    setJobMatches(null);
-    setJobMatchesErr("");
-    setResumeContext("");
-
+  const runFromResumeText = async (resumeText) => {
     let parsed = null;
     try {
-      parsed = await callParseResume(body);
+      parsed = await postJSON("/api/parse-resume", { resumeText }, 25000);
       if (parsed.targetRole && !jobRole) setJobRole(parsed.targetRole);
       const ctxParts = [];
       if (parsed.summary) ctxParts.push(parsed.summary);
@@ -684,13 +686,10 @@ Respond ONLY with valid JSON, no extra text:
 
     if (parsed) {
       try {
-        const r = await fetchWithTimeout("/api/find-jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary }),
-        }, 30000);
-        const d = await r.json().catch(() => ({ error: "Invalid response from server" }));
-        if (!r.ok) throw new Error(d.error || `Job search failed (${r.status})`);
+        const d = await postJSON("/api/find-jobs",
+          { role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary },
+          25000,
+        );
         if (d.jobs?.length) setJobMatches(d);
         else setJobMatchesErr("Couldn't generate job matches. Try again or paste more resume detail.");
       } catch (e) {
@@ -701,10 +700,15 @@ Respond ONLY with valid JSON, no extra text:
 
   const uploadResume = (file) => {
     if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      setResumeErr("That PDF is too large (max 6MB). Please paste your resume text instead.");
+      return;
+    }
     setResumeParsing(true);
     setResumeErr("");
     setJobMatches(null);
     setJobMatchesErr("");
+    setResumeContext("");
 
     const reader = new FileReader();
     reader.onerror = () => {
@@ -712,7 +716,6 @@ Respond ONLY with valid JSON, no extra text:
       setResumeParsing(false);
     };
     reader.onload = async (e) => {
-      // FileReader.readAsDataURL gives us "data:application/pdf;base64,XXXX"
       const dataUrl = e.target.result || "";
       const base64 = dataUrl.split(",")[1] || "";
       if (!base64) {
@@ -720,14 +723,27 @@ Respond ONLY with valid JSON, no extra text:
         setResumeParsing(false);
         return;
       }
-      await runResumeAnalysis({ resumePdfBase64: base64 });
+      let extracted;
+      try {
+        extracted = await postJSON("/api/extract-pdf", { resumePdfBase64: base64 }, 25000);
+      } catch (err) {
+        setResumeErr(err.message + " — please paste your resume text below.");
+        setResumeParsing(false);
+        return;
+      }
+      await runFromResumeText(extracted.resumeText);
     };
     reader.readAsDataURL(file);
   };
 
   const submitPastedResume = () => {
     setResumeFile(null);
-    runResumeAnalysis({ resumeText: pastedResume.trim() });
+    setResumeParsing(true);
+    setResumeErr("");
+    setJobMatches(null);
+    setJobMatchesErr("");
+    setResumeContext("");
+    runFromResumeText(pastedResume.trim());
   };
 
   const restart = () => {
