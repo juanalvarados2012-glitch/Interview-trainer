@@ -130,16 +130,6 @@ const css = `
   @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 12px rgba(180,80,255,0)}}
   .end-btn{width:100%;padding:9px;border-radius:10px;border:1px solid #2a1a1a;background:transparent;color:#664444;font-family:'Syne',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;margin-top:10px}
   .end-btn:hover{border-color:#3a1a1a;color:#cc6060}
-  /* ── RESUME UPLOAD ── */
-  .resume-drop{border:1.5px dashed #1a1a35;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:18px;background:#080812}
-  .resume-drop:hover{border-color:#3030a0;background:#0a0a1f}
-  .resume-drop.has-file{border-color:#4ecc9650;background:#051510}
-  .resume-drop input[type=file]{display:none}
-  .resume-icon{font-size:1.4rem;flex-shrink:0}
-  .resume-text{flex:1;font-family:'DM Mono',monospace;font-size:.78rem;color:#444;line-height:1.4}
-  .resume-text strong{color:#eeeeff;display:block;margin-bottom:2px;font-size:.8rem}
-  .resume-clear{background:none;border:none;color:#444;cursor:pointer;font-size:.9rem;padding:4px;border-radius:6px;transition:color .2s}
-  .resume-clear:hover{color:#cc6060}
   /* ── HISTORY ── */
   .hist-panel{margin-top:32px}
   .hist-title{font-family:'DM Mono',monospace;font-size:.68rem;color:#333;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
@@ -154,22 +144,6 @@ const css = `
   .hist-info{flex:1;min-width:0}
   .hist-role{font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hist-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px}
-  /* ── JOB MATCHES ── */
-  .jobs-panel{background:#080812;border:1px solid #1a1a30;border-radius:16px;padding:18px;margin-bottom:18px;animation:fadeUp .3s ease}
-  .jobs-title{font-size:.82rem;font-weight:700}
-  .jobs-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#444;margin-top:2px;margin-bottom:14px}
-  .jobs-list{display:flex;flex-direction:column;gap:8px}
-  .job-card{background:#0a0a18;border:1px solid #141428;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-  .job-card-top{display:flex;align-items:center;gap:10px}
-  .job-card-num{width:24px;height:24px;border-radius:50%;background:#0d0d22;border:1px solid #1a1a40;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.65rem;color:#4040a0;flex-shrink:0;font-weight:700}
-  .job-card-title{font-size:.88rem;font-weight:700}
-  .job-card-reason{font-family:'DM Mono',monospace;font-size:.7rem;color:#555;line-height:1.4;padding-left:34px}
-  .job-card-actions{display:flex;gap:6px;padding-left:34px}
-  .job-card-link{display:inline-flex;align-items:center;padding:7px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.72rem;color:#4040a0;background:#0a0a1f;border:1px solid #1a1a40;text-decoration:none;transition:all .2s;white-space:nowrap}
-  .job-card-link:hover{border-color:#3030a0;color:#8080ff}
-  .job-card-practice{display:inline-flex;align-items:center;padding:7px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.72rem;color:#4ecc96;background:#051510;border:1px solid #4ecc9630;cursor:pointer;transition:all .2s;white-space:nowrap}
-  .job-card-practice:hover{border-color:#4ecc9660;background:#0a2a18}
-  .jobs-loading{font-family:'DM Mono',monospace;font-size:.72rem;color:#333;display:flex;align-items:center;gap:8px}
   /* ── BACK LINK ── */
   .back-link{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#333;text-decoration:none;margin-bottom:24px;transition:color .2s}
   .back-link:hover{color:#6060cc}
@@ -380,18 +354,6 @@ export default function App() {
   const [scraping, setScraping] = useState(false);
   const [scrapeErr, setScrapeErr] = useState("");
 
-  // Resume upload
-  const [resumeFile, setResumeFile] = useState(null);
-  const [resumeParsing, setResumeParsing] = useState(false);
-  const [jobMatches, setJobMatches] = useState(null);
-  const [jobMatchesErr, setJobMatchesErr] = useState("");
-  const [resumeErr, setResumeErr] = useState("");
-  const [resumeContext, setResumeContext] = useState("");
-  const [practicingJob, setPracticingJob] = useState(null);
-  const [pasteMode, setPasteMode] = useState(false);
-  const [pastedResume, setPastedResume] = useState("");
-  const resumeInputRef = useRef(null);
-
   // Interview
   const [apiMessages, setApiMessages] = useState([]);
   const [displayMessages, setDisplayMessages] = useState([]);
@@ -414,8 +376,6 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages, aiThinking]);
 
-  // buildSystem accepts optional overrides so startInterview can be called with
-  // values that haven't been committed to state yet (e.g. from practiceJob).
   const buildSystem = useCallback((opts = {}) => {
     const role = opts.role     ?? jobRole;
     const cmp  = opts.company  ?? company;
@@ -423,11 +383,10 @@ export default function App() {
     const nq   = opts.numQ     ?? numQ;
     const diff = opts.difficulty ?? difficulty;
     const cfg  = DIFF_STATIC[diff];
-    const ctx = opts.resumeContext ?? resumeContext;
     return `${makePersona(diff, cmp)}
 
 Job description for ${role}: ${jd}
-${ctx ? `\nCandidate background (from their resume): ${ctx}\n` : ""}
+
 INTERVIEW RULES (follow strictly):
 - When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
 - Ask exactly ${nq} main questions, each specific to the actual job description above.
@@ -436,7 +395,7 @@ INTERVIEW RULES (follow strictly):
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
 - Vary how you start each response — don't repeat the same opener.
 - When all ${nq} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
-  }, [jobRole, company, jdText, numQ, difficulty, resumeContext]);
+  }, [jobRole, company, jdText, numQ, difficulty]);
 
   /* ── SCRAPE JOB URL ── */
   const scrapeJob = async () => {
@@ -461,7 +420,6 @@ INTERVIEW RULES (follow strictly):
   };
 
   /* ── START INTERVIEW ── */
-  // opts = { role, company, jd } lets practiceJob bypass stale state
   const startInterview = async (opts = {}) => {
     unlock();
     if (opts.role    !== undefined) setJobRole(opts.role);
@@ -620,132 +578,6 @@ Respond ONLY with valid JSON, no extra text or markdown:
     }
   };
 
-  /* ── PRACTICE JOB CARD ── */
-  const practiceJob = async (job) => {
-    setPracticingJob(job.title);
-    try {
-      const raw = await callAI(
-        `You are a job description writer. Create a realistic job description for a "${job.title}" position.
-Respond ONLY with valid JSON, no extra text:
-{"company":"realistic company name","jd":"2-3 paragraph job description covering role overview, key responsibilities, and required qualifications"}`,
-        [{ role: "user", content: `Job title: ${job.title}` }],
-        500
-      );
-      const match = raw.match(/\{[\s\S]*\}/);
-      const { company: c = "", jd: d = "" } = match ? JSON.parse(match[0]) : {};
-      setPracticingJob(null);
-      await startInterview({ role: job.title, company: c, jd: d });
-    } catch {
-      setPracticingJob(null);
-      setJobRole(job.title);
-      setTimeout(() => {
-        jobRoleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        jobRoleRef.current?.focus();
-      }, 80);
-    }
-  };
-
-  const fetchWithTimeout = async (url, options, ms) => {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), ms);
-    try {
-      const res = await fetch(url, { ...options, signal: ctrl.signal });
-      return res;
-    } catch (e) {
-      if (e.name === "AbortError") throw new Error("Request timed out");
-      throw e;
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-
-  const postJSON = async (url, body, ms) => {
-    const res = await fetchWithTimeout(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }, ms);
-    const data = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
-    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-    return data;
-  };
-
-  const runFromResumeText = async (resumeText) => {
-    let parsed = null;
-    try {
-      parsed = await postJSON("/api/parse-resume", { resumeText }, 25000);
-      if (parsed.targetRole && !jobRole) setJobRole(parsed.targetRole);
-      const ctxParts = [];
-      if (parsed.summary) ctxParts.push(parsed.summary);
-      if (parsed.skills?.length) ctxParts.push("Key skills: " + parsed.skills.join(", "));
-      setResumeContext(ctxParts.join(" "));
-    } catch (e) {
-      setResumeErr(e.message);
-    }
-    setResumeParsing(false);
-
-    if (parsed) {
-      try {
-        const d = await postJSON("/api/find-jobs",
-          { role: parsed.targetRole, skills: parsed.skills, summary: parsed.summary },
-          25000,
-        );
-        if (d.jobs?.length) setJobMatches(d);
-        else setJobMatchesErr("Couldn't generate job matches. Try again or paste more resume detail.");
-      } catch (e) {
-        setJobMatchesErr(e.message);
-      }
-    }
-  };
-
-  const uploadResume = (file) => {
-    if (!file) return;
-    if (file.size > 6 * 1024 * 1024) {
-      setResumeErr("That PDF is too large (max 6MB). Please paste your resume text instead.");
-      return;
-    }
-    setResumeParsing(true);
-    setResumeErr("");
-    setJobMatches(null);
-    setJobMatchesErr("");
-    setResumeContext("");
-
-    const reader = new FileReader();
-    reader.onerror = () => {
-      setResumeErr("Could not read the file. Please try again.");
-      setResumeParsing(false);
-    };
-    reader.onload = async (e) => {
-      const dataUrl = e.target.result || "";
-      const base64 = dataUrl.split(",")[1] || "";
-      if (!base64) {
-        setResumeErr("Could not read the file. Please try again.");
-        setResumeParsing(false);
-        return;
-      }
-      let extracted;
-      try {
-        extracted = await postJSON("/api/extract-pdf", { resumePdfBase64: base64 }, 25000);
-      } catch (err) {
-        setResumeErr(err.message + " — please paste your resume text below.");
-        setResumeParsing(false);
-        return;
-      }
-      await runFromResumeText(extracted.resumeText);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const submitPastedResume = () => {
-    setResumeFile(null);
-    setResumeParsing(true);
-    setResumeErr("");
-    setJobMatches(null);
-    setJobMatchesErr("");
-    setResumeContext("");
-    runFromResumeText(pastedResume.trim());
-  };
-
   const restart = () => {
     stop(); stopRec();
     setPhase("setup");
@@ -754,8 +586,6 @@ Respond ONLY with valid JSON, no extra text:
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
-    setResumeFile(null); setResumeErr(""); setJobMatches(null); setJobMatchesErr("");
-    setResumeContext(""); setPasteMode(false); setPastedResume(""); setPracticingJob(null);
   };
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
@@ -822,128 +652,6 @@ Respond ONLY with valid JSON, no extra text:
                 <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google (optional)" />
               </div>
             </div>
-            {/* ── RESUME UPLOAD ── */}
-            <div
-              className={`resume-drop${resumeFile ? " has-file" : ""}`}
-              onClick={() => !resumeFile && resumeInputRef.current?.click()}
-            >
-              <input
-                ref={resumeInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) { setResumeFile(f); uploadResume(f); }
-                }}
-              />
-              <span className="resume-icon">{resumeParsing ? "⏳" : resumeFile && !resumeErr ? "📄" : resumeFile ? "⚠️" : "📎"}</span>
-                <div className="resume-text">
-                {resumeParsing ? (
-                  <><strong>Analyzing resume...</strong>Extracting your experience and skills</>
-                ) : resumeFile && !resumeErr ? (
-                  <><strong>{resumeFile.name}</strong>Resume parsed — fields auto-filled below</>
-                ) : resumeFile ? (
-                  <><strong>{resumeFile.name}</strong>Parsing failed — see error below</>
-                ) : (
-                  <><strong>Upload your resume (optional)</strong>PDF · auto-fills role and skills</>
-                )}
-              </div>
-              {resumeFile && !resumeParsing && (
-                <button
-                  className="resume-clear"
-                  onClick={e => { e.stopPropagation(); setResumeFile(null); setResumeErr(""); }}
-                >✕</button>
-              )}
-            </div>
-            {resumeErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{resumeErr}</div>}
-
-            {/* ── PASTE RESUME TEXT ── */}
-            {!pasteMode ? (
-              <button
-                className="btn-ghost"
-                style={{ marginTop: -4, marginBottom: 14 }}
-                onClick={() => setPasteMode(true)}
-              >
-                Or paste resume text instead
-              </button>
-            ) : (
-              <div style={{ marginBottom: 18 }}>
-                <label>Paste resume text</label>
-                <textarea
-                  rows={6}
-                  placeholder="Copy the text from your resume and paste it here..."
-                  value={pastedResume}
-                  onChange={e => setPastedResume(e.target.value)}
-                />
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <button
-                    className="url-btn"
-                    onClick={submitPastedResume}
-                    disabled={resumeParsing || pastedResume.trim().length < 80}
-                  >
-                    {resumeParsing ? "Analyzing..." : "Analyze pasted resume"}
-                  </button>
-                  <button
-                    className="url-btn"
-                    onClick={() => { setPasteMode(false); setPastedResume(""); }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── JOB MATCHES ── */}
-            {(resumeContext || resumeParsing) && !resumeErr && (
-              <div className="jobs-panel">
-                <div className="jobs-title">Jobs that match your profile</div>
-                <div className="jobs-sub">
-                  {jobMatches
-                    ? "Open LinkedIn to apply · or practice the interview first"
-                    : jobMatchesErr
-                    ? "Couldn't load matches"
-                    : "Finding your best matches..."}
-                </div>
-                {jobMatchesErr ? (
-                  <div className="err-box" style={{ marginTop: 0 }}>{jobMatchesErr}</div>
-                ) : !jobMatches ? (
-                  <div className="jobs-loading">
-                    <div className="dot" /><div className="dot" /><div className="dot" />
-                    Analyzing your profile...
-                  </div>
-                ) : (
-                  <div className="jobs-list">
-                    {jobMatches.jobs?.map((j, i) => (
-                      <div className="job-card" key={i}>
-                        <div className="job-card-top">
-                          <div className="job-card-num">{i + 1}</div>
-                          <div className="job-card-title">{j.title}</div>
-                        </div>
-                        <div className="job-card-reason">{j.reason}</div>
-                        <div className="job-card-actions">
-                          <a
-                            href={j.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="job-card-link"
-                          >
-                            LinkedIn →
-                          </a>
-                          <button
-                            className="job-card-practice"
-                            disabled={!!practicingJob}
-                            onClick={() => practiceJob(j)}
-                          >
-                            {practicingJob === j.title ? "Preparing..." : "Practice →"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="field">
               <label>Job Description</label>
               <textarea
