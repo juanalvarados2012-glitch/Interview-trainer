@@ -723,10 +723,10 @@ Respond ONLY with valid JSON, no extra text:
       const arrayBuffer = e.target.result;
       let resumeText = "";
 
-      try {
+      const extractWithTimeout = async () => {
         const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+        // Worker is served from /public so we don't depend on a CDN that may stall.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
         const parts = [];
         for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
@@ -734,12 +734,19 @@ Respond ONLY with valid JSON, no extra text:
           const content = await page.getTextContent();
           parts.push(content.items.map(item => item.str).join(" "));
         }
-        resumeText = parts.join("\n").replace(/\s+/g, " ").trim().slice(0, 8000);
+        return parts.join("\n").replace(/\s+/g, " ").trim().slice(0, 8000);
+      };
+
+      try {
+        resumeText = await Promise.race([
+          extractWithTimeout(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15000)),
+        ]);
       } catch {}
 
       if (!looksLikeResume(resumeText)) {
         setResumeErr(
-          "Could not read this PDF — it may be image-only or use non-standard fonts. Use the \"Paste resume text\" option below instead."
+          "Couldn't read text from this PDF. It may be image-only, scanned, or use non-standard fonts. Click \"Or paste resume text instead\" below and paste your resume."
         );
         setResumeParsing(false);
         return;
