@@ -139,6 +139,36 @@ const css = `
   @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 12px rgba(180,80,255,0)}}
   .end-btn{width:100%;padding:9px;border-radius:10px;border:1px solid #2a1a1a;background:transparent;color:#664444;font-family:'Syne',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;margin-top:10px}
   .end-btn:hover{border-color:#3a1a1a;color:#cc6060}
+  /* ── RECORD TOGGLE ── */
+  .record-toggle{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#080812;border:1px solid #1a1a30;border-radius:12px;cursor:pointer;margin-bottom:18px;transition:all .2s}
+  .record-toggle:hover{border-color:#3030a0}
+  .record-toggle.on{border-color:#c060ff60;background:#0a0518}
+  .record-toggle-icon{font-size:1.4rem;flex-shrink:0}
+  .record-toggle-text{flex:1;font-family:'DM Mono',monospace;font-size:.72rem;color:#555;line-height:1.4}
+  .record-toggle-text strong{display:block;color:#eeeeff;margin-bottom:2px;font-size:.8rem}
+  .record-toggle-switch{width:36px;height:20px;background:#1a1a30;border-radius:20px;position:relative;flex-shrink:0;transition:background .2s}
+  .record-toggle-switch.on{background:#c060ff}
+  .record-toggle-knob{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#eeeeff;border-radius:50%;transition:transform .2s}
+  .record-toggle-switch.on .record-toggle-knob{transform:translateX(16px)}
+  /* ── CAM PREVIEW ── */
+  .cam-preview{position:fixed;top:16px;right:16px;width:108px;height:80px;border-radius:10px;overflow:hidden;border:2px solid #c060ff;background:#000;z-index:50;box-shadow:0 4px 14px rgba(192,96,255,.4)}
+  .cam-preview video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .cam-rec-dot{position:absolute;top:6px;left:6px;width:8px;height:8px;background:#ff3030;border-radius:50%;animation:ivPulse 1.4s infinite}
+  /* ── VIDEO REVIEW ── */
+  .video-review{background:#080812;border:1px solid #1a1a30;border-radius:14px;padding:18px;margin-bottom:18px}
+  .video-review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .video-review-title{font-size:.85rem;font-weight:700;letter-spacing:-.01em}
+  .video-review-dl{font-family:'DM Mono',monospace;font-size:.7rem;color:#6060cc;text-decoration:none;border:1px solid #2a2a50;padding:5px 10px;border-radius:8px;transition:all .2s}
+  .video-review-dl:hover{background:#12122a;color:#9090ff}
+  .video-review-player{width:100%;border-radius:10px;background:#000;margin-bottom:14px;transform:scaleX(-1)}
+  .video-stats{display:flex;gap:8px;margin-bottom:14px}
+  .video-stat{flex:1;background:#0a0a18;border:1px solid #1a1a30;border-radius:10px;padding:10px 8px;text-align:center}
+  .video-stat-val{font-size:1.4rem;font-weight:800;line-height:1.1;background:linear-gradient(135deg,#eeeeff,#6060cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .video-stat-val.great{background:linear-gradient(135deg,#4ecc96,#2a9a70);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .video-stat-val.ok{background:linear-gradient(135deg,#f0c060,#cc9030);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .video-stat-val.low{background:linear-gradient(135deg,#f06060,#cc3030);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .video-stat-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+  .video-stat-sub{font-family:'DM Mono',monospace;font-size:.6rem;color:#666;margin-top:3px;line-height:1.3}
   /* ── COACH CARD ── */
   .coach-card{background:linear-gradient(135deg,#0d0d1f,#0a1a18);border:1px solid #1a2a30;border-radius:18px;padding:20px;margin-bottom:18px;animation:fadeUp .3s ease}
   .coach-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -378,6 +408,44 @@ const EXAMPLES = [
 
 const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
 
+/* ── AUDIO ANALYSIS (transcript-based, all local) ─────────────── */
+const FILLER_WORDS = [
+  "um", "uh", "uhm", "erm", "hmm",
+  "like", "you know", "i mean", "i guess", "i think",
+  "kind of", "kinda", "sort of", "sorta", "basically", "literally", "actually", "honestly",
+  "este", "o sea", "pues", "como que", "tipo", "no sé", "este...",
+];
+function analyzeSpeech(userMessages, totalSeconds) {
+  const joined = userMessages.map(m => m.content).join(" ").toLowerCase();
+  const wordCount = (joined.match(/\b[\w']+\b/g) || []).length;
+  const wpm = totalSeconds > 0 ? Math.round((wordCount / totalSeconds) * 60) : 0;
+  const fillerHits = {};
+  let fillerTotal = 0;
+  for (const f of FILLER_WORDS) {
+    const re = new RegExp(`\\b${f.replace(/\s+/g, "\\s+")}\\b`, "gi");
+    const matches = joined.match(re);
+    if (matches?.length) { fillerHits[f] = matches.length; fillerTotal += matches.length; }
+  }
+  const topFillers = Object.entries(fillerHits).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  // Quick energy heuristic: variation in sentence length
+  const sentences = joined.split(/[.!?]+/).filter(s => s.trim().length > 3);
+  const lens = sentences.map(s => s.trim().split(/\s+/).length);
+  const avgLen = lens.length ? lens.reduce((a, b) => a + b, 0) / lens.length : 0;
+  const variance = lens.length ? lens.reduce((s, l) => s + (l - avgLen) ** 2, 0) / lens.length : 0;
+  const energyHint = variance < 4 ? "Try varying your sentence length — mix short and long for impact"
+    : variance > 60 ? "Good variation in sentence length — keeps the listener engaged"
+    : "Decent rhythm in your answers";
+  return { wordCount, wpm, fillerTotal, topFillers, energyHint };
+}
+function paceLabel(wpm) {
+  if (wpm === 0) return { tone: "ok", text: "No pace data" };
+  if (wpm < 110) return { tone: "low", text: "Too slow — pick up the pace" };
+  if (wpm < 140) return { tone: "ok", text: "Slightly slow" };
+  if (wpm <= 170) return { tone: "great", text: "On point" };
+  if (wpm <= 200) return { tone: "ok", text: "A bit fast" };
+  return { tone: "low", text: "Way too fast — slow down" };
+}
+
 /* ── DIFFICULTY CONFIG ───────────────────────────────────────── */
 const DIFF_STATIC = {
   easy:   { name: "Sam Rivera",   title: "HR Coordinator",                  label: "Easy",     emoji: "🟢", preferGender: "female", rate: 0.98 },
@@ -411,6 +479,19 @@ export default function App() {
   const [jobUrl, setJobUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [scrapeErr, setScrapeErr] = useState("");
+
+  // Video recording
+  const [recordEnabled, setRecordEnabled] = useState(false);
+  const [recordingActive, setRecordingActive] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState(null);
+  const [recordedMime, setRecordedMime] = useState(null);
+  const [recordStart, setRecordStart] = useState(0);
+  const [recordDuration, setRecordDuration] = useState(0);
+  const [cameraErr, setCameraErr] = useState("");
+  const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const previewVideoRef = useRef(null);
 
   // Interview
   const [apiMessages, setApiMessages] = useState([]);
@@ -499,6 +580,7 @@ INTERVIEW RULES (follow strictly):
     setStartLoading(true);
     setStartErr("");
     setTips({}); setLoadingTips({});
+    if (recordEnabled && !recordingActive) await startRecording();
     const trigger = [{ role: "user", content: "[START]" }];
     setDisplayMessages([{ role: "assistant", content: "", streaming: true }]);
     try {
@@ -591,6 +673,10 @@ Be specific to what they actually said — don't give generic advice. No bullet 
   const finishInterview = async (history) => {
     setPhase("done");
     setEvalLoading(true);
+    if (recordingActive) {
+      setRecordDuration((Date.now() - recordStart) / 1000);
+      stopRecording();
+    }
 
     const transcript = history
       .filter(m => m.content !== "[START]")
@@ -675,6 +761,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setStartLoading(true);
     setStartErr("");
     setTips({}); setLoadingTips({});
+    if (recordEnabled && !recordingActive) await startRecording();
 
     const drillSystem = `${makePersona("medium", lastCompany)}
 
@@ -708,16 +795,73 @@ DRILL RULES:
     setStartLoading(false);
   };
 
+  /* ── VIDEO RECORDING ── */
+  const stopRecording = useCallback(() => {
+    try { mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop(); } catch {}
+    mediaStreamRef.current?.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    mediaStreamRef.current = null;
+    setRecordingActive(false);
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    setCameraErr("");
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setCameraErr("Your browser doesn't support video recording.");
+      return false;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+        audio: true,
+      });
+      mediaStreamRef.current = stream;
+      if (previewVideoRef.current) {
+        previewVideoRef.current.srcObject = stream;
+        previewVideoRef.current.play().catch(() => {});
+      }
+      recordedChunksRef.current = [];
+      // Pick the best supported mime — webm on Chrome/Android, mp4 on iOS Safari
+      const candidates = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"];
+      const mime = candidates.find(c => MediaRecorder.isTypeSupported(c)) || "";
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        if (recordedChunksRef.current.length === 0) return;
+        const blob = new Blob(recordedChunksRef.current, { type: recorder.mimeType });
+        const url = URL.createObjectURL(blob);
+        setRecordedUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
+        setRecordedMime(recorder.mimeType);
+      };
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
+      setRecordStart(Date.now());
+      setRecordingActive(true);
+      return true;
+    } catch (e) {
+      setCameraErr("Couldn't access camera/microphone. Allow permissions and try again.");
+      return false;
+    }
+  }, []);
+
   const restart = () => {
     stop(); stopRec();
+    stopRecording();
+    if (recordedUrl) { try { URL.revokeObjectURL(recordedUrl); } catch {} }
     setPhase("setup");
     setJobRole(""); setCompany(""); setJdText(""); setDifficulty("medium");
     setApiMessages([]); setDisplayMessages([]);
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
+    setRecordedUrl(null); setRecordedMime(null); setRecordDuration(0);
+    setCameraErr("");
     drillSystemRef.current = null;
   };
+
+  // Stop any active stream when the component unmounts
+  useEffect(() => () => {
+    mediaStreamRef.current?.getTracks().forEach(t => { try { t.stop(); } catch {} });
+  }, []);
 
   const insights = computeInsights(history);
 
@@ -869,6 +1013,22 @@ DRILL RULES:
                 ))}
               </div>
             </div>
+
+            <div
+              className={`record-toggle${recordEnabled ? " on" : ""}`}
+              onClick={() => setRecordEnabled(v => !v)}
+            >
+              <div className="record-toggle-icon">{recordEnabled ? "🔴" : "📹"}</div>
+              <div className="record-toggle-text">
+                <strong>Record yourself</strong>
+                <span>Watch your interview back · count fillers · check pace · 100% private, stays on your device</span>
+              </div>
+              <div className={`record-toggle-switch${recordEnabled ? " on" : ""}`}>
+                <div className="record-toggle-knob" />
+              </div>
+            </div>
+            {cameraErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{cameraErr}</div>}
+
             <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
               {startLoading ? "Preparing interviewer..." : "Start interview →"}
             </button>
@@ -885,6 +1045,12 @@ DRILL RULES:
         {/* ── INTERVIEW ── */}
         {phase === "interview" && (
           <div className="card" key="interview">
+            {recordingActive && (
+              <div className="cam-preview">
+                <video ref={previewVideoRef} muted playsInline />
+                <div className="cam-rec-dot" />
+              </div>
+            )}
             {/* Interviewer presence card */}
             {(() => {
               const cfg = DIFF_STATIC[difficulty];
@@ -1046,6 +1212,52 @@ DRILL RULES:
                 )}
               </>
             )}
+
+            {/* ── VIDEO REVIEW ── */}
+            {recordedUrl && (() => {
+              const userMessages = apiMessages.filter(m => m.role === "user" && m.content !== "[START]");
+              const audio = analyzeSpeech(userMessages, recordDuration);
+              const pace = paceLabel(audio.wpm);
+              return (
+                <div className="video-review">
+                  <div className="video-review-head">
+                    <span className="video-review-title">📹 Video review</span>
+                    <a
+                      href={recordedUrl}
+                      download={`interview-${new Date().toISOString().slice(0,10)}.${recordedMime?.includes("mp4") ? "mp4" : "webm"}`}
+                      className="video-review-dl"
+                    >
+                      ⬇ Download
+                    </a>
+                  </div>
+                  <video src={recordedUrl} controls playsInline className="video-review-player" />
+                  <div className="video-stats">
+                    <div className="video-stat">
+                      <div className={`video-stat-val ${pace.tone}`}>{audio.wpm || "—"}</div>
+                      <div className="video-stat-lbl">Words / min</div>
+                      <div className="video-stat-sub">{pace.text}</div>
+                    </div>
+                    <div className="video-stat">
+                      <div className={`video-stat-val ${audio.fillerTotal === 0 ? "great" : audio.fillerTotal < 6 ? "ok" : "low"}`}>
+                        {audio.fillerTotal}
+                      </div>
+                      <div className="video-stat-lbl">Filler words</div>
+                      <div className="video-stat-sub">
+                        {audio.topFillers.length === 0 ? "Clean delivery" : audio.topFillers.map(([w, n]) => `"${w}" ×${n}`).join(", ")}
+                      </div>
+                    </div>
+                    <div className="video-stat">
+                      <div className="video-stat-val">{audio.wordCount}</div>
+                      <div className="video-stat-lbl">Total words</div>
+                      <div className="video-stat-sub">in {Math.round(recordDuration)}s</div>
+                    </div>
+                  </div>
+                  <div className="tip-box" style={{ marginTop: 0, marginBottom: 20 }}>
+                    🎤 {audio.energyHint}
+                  </div>
+                </div>
+              );
+            })()}
 
             <button className="btn" onClick={startInterview} disabled={startLoading}>
               {startLoading ? "Preparing..." : "Repeat interview →"}
