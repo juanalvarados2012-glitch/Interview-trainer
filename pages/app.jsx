@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useHistory } from "../lib/useHistory";
+import { useHistory, computeInsights, WEAK_AREAS } from "../lib/useHistory";
 
 /* ── STYLES ─────────────────────────────────────────────────── */
 const css = `
@@ -139,6 +139,18 @@ const css = `
   @keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}50%{box-shadow:0 0 0 12px rgba(180,80,255,0)}}
   .end-btn{width:100%;padding:9px;border-radius:10px;border:1px solid #2a1a1a;background:transparent;color:#664444;font-family:'Syne',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;margin-top:10px}
   .end-btn:hover{border-color:#3a1a1a;color:#cc6060}
+  /* ── COACH CARD ── */
+  .coach-card{background:linear-gradient(135deg,#0d0d1f,#0a1a18);border:1px solid #1a2a30;border-radius:18px;padding:20px;margin-bottom:18px;animation:fadeUp .3s ease}
+  .coach-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .coach-title{font-family:'DM Mono',monospace;font-size:.7rem;color:#4ecc96;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+  .coach-streak{font-family:'DM Mono',monospace;font-size:.72rem;color:#f0c060;background:#1a1400;border:1px solid #f0c06040;padding:3px 10px;border-radius:20px}
+  .coach-stats{display:flex;gap:14px;margin-bottom:14px}
+  .coach-stat{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:12px;padding:12px 14px;text-align:center}
+  .coach-stat-val{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#eeeeff,#6060cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .coach-stat-lbl{font-family:'DM Mono',monospace;font-size:.65rem;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  .coach-weak{background:#080812;border:1px solid #1a1a30;border-left:3px solid #4ecc96;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#888;line-height:1.5}
+  .coach-weak-lbl{color:#444;text-transform:uppercase;font-size:.65rem;letter-spacing:.06em;margin-right:8px}
+  .coach-weak-val{color:#eeeeff;font-weight:600}
   /* ── HISTORY ── */
   .hist-panel{margin-top:32px}
   .hist-title{font-family:'DM Mono',monospace;font-size:.68rem;color:#333;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
@@ -415,6 +427,7 @@ export default function App() {
 
   const chatEndRef = useRef(null);
   const jobRoleRef = useRef(null);
+  const drillSystemRef = useRef(null);
   const { speak: rawSpeak, stop, speaking, unlock, voices } = useTTS();
   const { recording, supported: micOk, startRec, stopRec } = useSTT();
 
@@ -544,7 +557,7 @@ Be specific to what they actually said — don't give generic advice. No bullet 
 
     // Fire interviewer (streaming) + coach tip in parallel
     const [interviewerResult] = await Promise.allSettled([
-      callAIStream(buildSystem(), newApi, 400, (partial) => {
+      callAIStream(drillSystemRef.current || buildSystem(), newApi, 400, (partial) => {
         setDisplayMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1] = { role: "assistant", content: partial, streaming: true };
@@ -604,8 +617,18 @@ CALIBRATION NOTES:
 - Only give above 80 if the answers were genuinely impressive with real specifics.
 - Judge the SUBSTANCE of what was said, not the format or eloquence.
 
+Also pick 1-3 weakAreas from this exact list (the codes, not the labels):
+- behavioral_specifics (didn't give concrete real-life examples)
+- technical_depth (didn't demonstrate depth on technical/professional topics)
+- communication_clarity (rambled or was unclear)
+- structuring_answers (answers lacked structure — no situation/task/action/result arc)
+- energy_engagement (sounded flat, disengaged, low-energy)
+- confidence (hedged, qualified everything, didn't own outcomes)
+- job_alignment (didn't connect background to this specific role)
+- filler_words (excessive "um", "like", "you know", "I think")
+
 Respond ONLY with valid JSON, no extra text or markdown:
-{"puntaje":65,"nivel":"Good candidate","fortalezas":["concrete strength 1","concrete strength 2"],"mejoras":["specific improvement 1","specific improvement 2"],"recomendacion":"honest, actionable advice in 1-2 sentences"}`;
+{"puntaje":65,"nivel":"Good candidate","fortalezas":["concrete strength 1","concrete strength 2"],"mejoras":["specific improvement 1","specific improvement 2"],"recomendacion":"honest, actionable advice in 1-2 sentences","weakAreas":["behavioral_specifics","communication_clarity"]}`;
 
     try {
       const raw = await callAI(evalSystem, [{ role: "user", content: transcript }], 600);
@@ -618,6 +641,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
           role: jobRole,
           company: company || null,
           score: ev.puntaje,
+          weakAreas: Array.isArray(ev.weakAreas) ? ev.weakAreas : [],
           difficulty,
         });
       }
@@ -636,6 +660,54 @@ Respond ONLY with valid JSON, no extra text or markdown:
     }
   };
 
+  /* ── QUICK DRILL ── */
+  // Mini-interview: 3 questions focused on the user's weakest area, no setup needed.
+  const startDrill = async (weakAreaCode) => {
+    const area = WEAK_AREAS[weakAreaCode];
+    if (!area) return;
+    unlock();
+    const lastRole = history[0]?.role || "your target role";
+    const lastCompany = history[0]?.company || "the company";
+    setJobRole(lastRole);
+    setCompany(lastCompany);
+    setJdText(`Quick drill focused on: ${area.label}`);
+    setDifficulty("medium");
+    setStartLoading(true);
+    setStartErr("");
+    setTips({}); setLoadingTips({});
+
+    const drillSystem = `${makePersona("medium", lastCompany)}
+
+You are running a SHORT FOCUSED DRILL on the candidate's known weak area: ${area.label}.
+
+DRILL RULES:
+- Ask exactly 3 questions, all targeting this weak area: ${area.label}.
+- Opening question idea: "${area.drill}"
+- Brief intro: "Hey, I'm Jordan. Quick 3-question drill focused on ${area.label.toLowerCase()}."
+- No follow-ups. Move on after each answer.
+- React briefly to each answer (1 sentence) before the next question.
+- After question 3 is answered: close with one sentence of summary feedback and append "|||END|||" at the very end.
+- Keep your turns SHORT: 1-3 sentences each.`;
+
+    const trigger = [{ role: "user", content: "[START]" }];
+    setDisplayMessages([{ role: "assistant", content: "", streaming: true }]);
+    try {
+      const text = await callAIStream(drillSystem, trigger, 400, (partial) => {
+        setDisplayMessages([{ role: "assistant", content: partial, streaming: true }]);
+      });
+      setApiMessages([...trigger, { role: "assistant", content: text }]);
+      setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
+      setPhase("interview");
+      // Override buildSystem for subsequent turns by stashing the drill system on a ref
+      drillSystemRef.current = drillSystem;
+      speak(text);
+    } catch (e) {
+      setDisplayMessages([]);
+      setStartErr("Error starting drill: " + e.message);
+    }
+    setStartLoading(false);
+  };
+
   const restart = () => {
     stop(); stopRec();
     setPhase("setup");
@@ -644,7 +716,10 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setInputText(""); setEvaluation(null);
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
+    drillSystemRef.current = null;
   };
+
+  const insights = computeInsights(history);
 
   const pi = phase === "setup" ? 0 : phase === "interview" ? 1 : 2;
 
@@ -667,6 +742,44 @@ Respond ONLY with valid JSON, no extra text or markdown:
             </div>
           ))}
         </div>
+
+        {/* ── COACH INSIGHTS ── */}
+        {phase === "setup" && insights && insights.totalInterviews > 0 && (
+          <div className="coach-card">
+            <div className="coach-head">
+              <span className="coach-title">Your coach</span>
+              {insights.streak > 0 && (
+                <span className="coach-streak">🔥 {insights.streak}-day streak</span>
+              )}
+            </div>
+            <div className="coach-stats">
+              <div className="coach-stat">
+                <div className="coach-stat-val">{insights.avg}</div>
+                <div className="coach-stat-lbl">Avg score</div>
+              </div>
+              <div className="coach-stat">
+                <div className="coach-stat-val">{insights.totalInterviews}</div>
+                <div className="coach-stat-lbl">Total interviews</div>
+              </div>
+            </div>
+            {insights.topWeak && WEAK_AREAS[insights.topWeak] && (
+              <>
+                <div className="coach-weak">
+                  <span className="coach-weak-lbl">Focus area:</span>
+                  <span className="coach-weak-val">{WEAK_AREAS[insights.topWeak].label}</span>
+                </div>
+                <button
+                  className="btn"
+                  style={{ marginTop: 10 }}
+                  onClick={() => startDrill(insights.topWeak)}
+                  disabled={startLoading}
+                >
+                  {startLoading ? "Preparing..." : `Quick drill · 3 questions →`}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── SETUP ── */}
         {phase === "setup" && (
