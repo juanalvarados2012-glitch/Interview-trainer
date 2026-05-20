@@ -447,6 +447,40 @@ function paceLabel(wpm) {
   return { tone: "low", text: "Way too fast — slow down" };
 }
 
+/* ── FACE ANALYSIS (MediaPipe, runs entirely in the browser) ───── */
+// Lazy-loaded once and shared across recordings.
+let faceLandmarkerPromise = null;
+async function loadFaceLandmarker() {
+  if (faceLandmarkerPromise) return faceLandmarkerPromise;
+  faceLandmarkerPromise = (async () => {
+    const { FaceLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm"
+    );
+    return FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      },
+      outputFaceBlendshapes: true,
+      runningMode: "VIDEO",
+      numFaces: 1,
+    });
+  })().catch(e => { faceLandmarkerPromise = null; throw e; });
+  return faceLandmarkerPromise;
+}
+
+function presenceLabel(pct) {
+  if (pct >= 0.9) return { tone: "great", text: "Stayed in frame" };
+  if (pct >= 0.7) return { tone: "ok", text: "Slipped out occasionally" };
+  return { tone: "low", text: "Often out of frame" };
+}
+function eyeContactLabel(pct) {
+  if (pct >= 0.7) return { tone: "great", text: "Strong eye contact" };
+  if (pct >= 0.45) return { tone: "ok", text: "Decent, could be more direct" };
+  return { tone: "low", text: "Looking away too often" };
+}
+
 /* ── DIFFICULTY CONFIG ───────────────────────────────────────── */
 const DIFF_STATIC = {
   easy:   { name: "Sam Rivera",   title: "HR Coordinator",                  label: "Easy",     emoji: "🟢", preferGender: "female", rate: 0.98 },
@@ -493,6 +527,11 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const previewVideoRef = useRef(null);
+  const faceVideoRef = useRef(null);          // hidden <video> we sample from
+  const faceTimerRef = useRef(null);
+  const faceSamplesRef = useRef({ total: 0, present: 0, eyeContact: 0 });
+  const [faceMetrics, setFaceMetrics] = useState(null);
+  const [faceAnalysisActive, setFaceAnalysisActive] = useState(false);
 
   // Interview
   const [apiMessages, setApiMessages] = useState([]);
@@ -797,15 +836,79 @@ DRILL RULES:
   };
 
   /* ── VIDEO RECORDING ── */
+  const stopFaceAnalysis = useCallback(() => {
+    if (faceTimerRef.current) {
+      clearTimeout(faceTimerRef.current);
+      faceTimerRef.current = null;
+    }
+    if (faceVideoRef.current) {
+      try { faceVideoRef.current.pause(); } catch {}
+      faceVideoRef.current.srcObject = null;
+      faceVideoRef.current = null;
+    }
+    const { total, present, eyeContact } = faceSamplesRef.current;
+    if (total > 5) {
+      setFaceMetrics({
+        samples: total,
+        presence: present / total,
+        eyeContact: present > 0 ? eyeContact / present : 0,
+      });
+    }
+    setFaceAnalysisActive(false);
+  }, []);
+
+  const startFaceAnalysis = useCallback(async (stream) => {
+    faceSamplesRef.current = { total: 0, present: 0, eyeContact: 0 };
+    setFaceAnalysisActive(true);
+    let landmarker;
+    try {
+      landmarker = await loadFaceLandmarker();
+    } catch (e) {
+      // Model failed to load — keep recording, just skip visual analysis.
+      setFaceAnalysisActive(false);
+      return;
+    }
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.srcObject = stream;
+    try { await video.play(); } catch {}
+    faceVideoRef.current = video;
+
+    const sample = () => {
+      if (!faceVideoRef.current) return;
+      try {
+        const now = performance.now();
+        const result = landmarker.detectForVideo(video, now);
+        faceSamplesRef.current.total++;
+        if (result.faceLandmarks?.length > 0) {
+          faceSamplesRef.current.present++;
+          // Estimate eye contact from the eyeLook* blendshapes — if all are low,
+          // the user's eyes are pointed roughly at the camera.
+          const cats = result.faceBlendshapes?.[0]?.categories || [];
+          const lookMax = cats
+            .filter(c => c.categoryName?.startsWith("eyeLook"))
+            .reduce((m, c) => Math.max(m, c.score), 0);
+          if (lookMax < 0.4) faceSamplesRef.current.eyeContact++;
+        }
+      } catch {}
+      // ~3 Hz sampling keeps CPU light even on mid-range mobile
+      faceTimerRef.current = setTimeout(sample, 320);
+    };
+    sample();
+  }, []);
+
   const stopRecording = useCallback(() => {
     try { mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop(); } catch {}
+    stopFaceAnalysis();
     mediaStreamRef.current?.getTracks().forEach(t => { try { t.stop(); } catch {} });
     mediaStreamRef.current = null;
     setRecordingActive(false);
-  }, []);
+  }, [stopFaceAnalysis]);
 
   const startRecording = useCallback(async () => {
     setCameraErr("");
+    setFaceMetrics(null);
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setCameraErr("Your browser doesn't support video recording.");
       return false;
@@ -837,12 +940,14 @@ DRILL RULES:
       mediaRecorderRef.current = recorder;
       setRecordStart(Date.now());
       setRecordingActive(true);
+      // Fire and forget — analysis loop runs alongside the recording
+      startFaceAnalysis(stream);
       return true;
     } catch (e) {
       setCameraErr("Couldn't access camera/microphone. Allow permissions and try again.");
       return false;
     }
-  }, []);
+  }, [startFaceAnalysis]);
 
   const restart = () => {
     stop(); stopRec();
@@ -855,7 +960,7 @@ DRILL RULES:
     setStartErr(""); setInterviewErr("");
     setTips({}); setLoadingTips({});
     setRecordedUrl(null); setRecordedMime(null); setRecordDuration(0);
-    setCameraErr("");
+    setCameraErr(""); setFaceMetrics(null);
     drillSystemRef.current = null;
   };
 
@@ -1259,6 +1364,24 @@ DRILL RULES:
                       <div className="video-stat-sub">in {Math.round(recordDuration)}s</div>
                     </div>
                   </div>
+                  {faceMetrics && faceMetrics.samples > 5 && (() => {
+                    const pres = presenceLabel(faceMetrics.presence);
+                    const eye = eyeContactLabel(faceMetrics.eyeContact);
+                    return (
+                      <div className="video-stats">
+                        <div className="video-stat">
+                          <div className={`video-stat-val ${pres.tone}`}>{Math.round(faceMetrics.presence * 100)}%</div>
+                          <div className="video-stat-lbl">In frame</div>
+                          <div className="video-stat-sub">{pres.text}</div>
+                        </div>
+                        <div className="video-stat">
+                          <div className={`video-stat-val ${eye.tone}`}>{Math.round(faceMetrics.eyeContact * 100)}%</div>
+                          <div className="video-stat-lbl">Eye contact</div>
+                          <div className="video-stat-sub">{eye.text}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="tip-box" style={{ marginTop: 0, marginBottom: 20 }}>
                     🎤 {audio.energyHint}
                   </div>
