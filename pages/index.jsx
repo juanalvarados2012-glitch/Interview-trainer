@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Head from "next/head";
 import Link from "next/link";
 
 const css = `
@@ -156,33 +157,37 @@ const css = `
 
 const FREE_FEATS = [
   { on: true,  text: "6 interviews per month" },
-  { on: true,  text: "Voice-enabled AI interviewer" },
+  { on: true,  text: "Voice-enabled AI interviewer (best voice on your device)" },
   { on: true,  text: "Job URL analyzer" },
   { on: true,  text: "Real-time coach tips" },
+  { on: true,  text: "Standard difficulty (Jordan)" },
   { on: true,  text: "5 questions per interview" },
-  { on: false, text: "Hard & Easy difficulty levels" },
-  { on: false, text: "Resume upload & job matching" },
-  { on: false, text: "Unlimited interviews" },
-  { on: false, text: "Interview history & tracking" },
+  { on: false, text: "Easy & Hard modes (Sam + FAANG bootcamp with Morgan)" },
+  { on: false, text: "Coach memory & quick drills on your weak spots" },
+  { on: false, text: "Video review with pace + filler word analysis" },
+  { on: false, text: "Unlimited interviews & full history" },
 ];
 
 const PRO_FEATS = [
   { text: "Everything in Free" },
   { text: "Unlimited interviews per month" },
   { text: "Up to 10 questions per session" },
-  { text: "All 3 difficulty levels — Easy, Standard, Hard" },
-  { text: "Resume upload & job matching" },
-  { text: "Interview history & progress tracking" },
+  { text: "All 3 difficulties — Sam, Jordan, and Morgan's FAANG Stress Bootcamp" },
+  { text: "Coach memory: tracks your weak spots + 3-question drills" },
+  { text: "Video review: watch yourself back · WPM + filler counter" },
+  { text: "Full interview history + streak tracking" },
 ];
 
 
 const FEATURES = [
-  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud and listens to your answers — just like the real thing.", free: true },
-  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL and get questions tailored exactly to that role and company.", free: true },
-  { icon: "📊", title: "Honest scoring & feedback", desc: "Get scored on a calibrated rubric — not inflated praise. Specific strengths and concrete improvements.", free: true },
-  { icon: "⚡", title: "3 difficulty levels", desc: "Sam (encouraging), Jordan (balanced), or Morgan (relentless VP who pushes back on everything).", free: false },
+  { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud using the best voice on your device, and listens to your answers — just like the real thing.", free: true },
+  { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL — Greenhouse, Lever, Workday, company sites — and get questions tailored exactly to that role.", free: true },
+  { icon: "📊", title: "Honest scoring & feedback", desc: "Calibrated rubric — not inflated praise. Specific strengths, concrete improvements, and the one thing to fix first.", free: true },
   { icon: "💬", title: "Real-time coach tips", desc: "After each answer, your AI coach shows what worked and the single most impactful thing to improve.", free: true },
-  { icon: "📄", title: "Resume upload & job matching", desc: "Upload your CV to get tailored questions and instant job links from LinkedIn, Indeed, Glassdoor, and more.", free: false },
+  { icon: "🔥", title: "FAANG Stress Bootcamp", desc: "Hard mode with Morgan — a relentless VP who challenges every answer and demands metrics. Built for high-stakes interviews.", free: false },
+  { icon: "🧠", title: "Coach memory + drills", desc: "Tags your weak spots after each interview (STAR, confidence, fillers, alignment...) and offers 3-question drills on what to fix next.", free: false },
+  { icon: "📹", title: "Video review", desc: "Record yourself answering. Watch it back with pace (WPM) and filler word counter. 100% local — never leaves your device.", free: false },
+  { icon: "🔥", title: "Streak tracking", desc: "Daily practice streak that keeps you sharp. Build the habit before you need it.", free: false },
 ];
 
 const STEPS = [
@@ -199,9 +204,12 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with up to 5 questions each, Standard difficulty, voice, and job URL analyzer. Pro unlocks unlimited interviews, up to 10 questions, all 3 difficulty levels, resume upload with job matching, and history tracking." },
+  { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, job URL analyzer, and real-time coach tips. Pro unlocks unlimited interviews, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." },
+  { q: "Is there a monthly subscription?", a: "No — Pro is a one-time $29 payment for lifetime access. Most candidates only need to prepare for a few weeks, so subscriptions feel like a rip-off." },
   { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." },
-  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL and the AI analyzes the exact requirements and skills to generate highly relevant questions. Pro users can also upload a resume for even more targeted prep." },
+  { q: "What does \"Video review\" mean? Is my data safe?", a: "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers. You can play it back, see your WPM, filler words, and download it if you want to keep it." },
+  { q: "What's the \"FAANG Stress Bootcamp\"?", a: "Hard mode with Morgan, our toughest interviewer persona — a relentless VP who pushes back on every answer and demands specific metrics. Built to prep you for Big Tech bar-raisers and high-stakes panels." },
+  { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL (Greenhouse, Lever, Workday, company career pages all work great) and the AI extracts the exact requirements and skills to generate targeted questions." },
   { q: "When is Pro launching?", a: "Soon — we're finishing payment integration. Drop your email in the notify field and you'll be first to know, with a launch discount." },
 ];
 
@@ -217,8 +225,30 @@ export default function Landing() {
     setNotifySent(true);
   };
 
+  const title = "InterviewHub — Practice job interviews with a real AI interviewer";
+  const description = "Practice with an AI interviewer that speaks, pushes back on weak answers, and gives real-time coaching. Paste any job posting and start in seconds. No sign-up. $29 lifetime — no subscription.";
+  const url = "https://interviewhub.app";
+
   return (
     <>
+      <Head>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta name="theme-color" content="#07080f" />
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎙%3C/text%3E%3C/svg%3E" />
+
+        {/* Open Graph (Facebook, LinkedIn, WhatsApp, Slack) */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={url} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:site_name" content="InterviewHub" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+      </Head>
       <style>{css}</style>
 
       {/* ── NAV ── */}
@@ -235,7 +265,7 @@ export default function Landing() {
         <div className="hero-glow" />
         <div className="hero-tag">
           <span className="hero-tag-dot" />
-          AI-powered · voice-enabled · job-specific
+          $29 lifetime · no subscription · no sign-up
         </div>
         <h1>
           <span className="gradient-text">Ace your next</span><br />
