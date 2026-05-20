@@ -102,6 +102,15 @@ const css = `
   @keyframes ivPulse{0%,100%{opacity:1}50%{opacity:.3}}
   .iv-live{font-family:'DM Mono',monospace;font-size:.65rem;color:#4ecc96;text-transform:uppercase;letter-spacing:.08em}
   .iv-typing{font-family:'DM Mono',monospace;font-size:.65rem;color:#555;margin-left:4px}
+  /* ── VOICE PICKER ── */
+  .voice-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#080812;border:1px solid #1a1a30;border-radius:12px;margin-bottom:14px}
+  .voice-label{font-family:'DM Mono',monospace;font-size:.7rem;color:#555;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
+  .voice-select{flex:1;background:transparent;border:none;color:#aaa;font-family:'DM Mono',monospace;font-size:.78rem;padding:6px 8px;border-radius:6px;outline:none;cursor:pointer}
+  .voice-select:hover{background:#0d0d20;color:#eeeeff}
+  .voice-select option{background:#0d0d1a}
+  .voice-preview{background:#12122a;border:1px solid #2a2a50;color:#8080cc;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.78rem;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+  .voice-preview:hover:not(:disabled){background:#1a1a40;color:#aaaaff}
+  .voice-preview:disabled{opacity:.4;cursor:not-allowed}
   /* ── CHAT ── */
   .chat-area{height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 8px;scroll-behavior:smooth}
   .chat-area::-webkit-scrollbar{width:3px}
@@ -204,25 +213,65 @@ async function callAI(system, messages, maxTokens = 400) {
 }
 
 /* ── TTS ─────────────────────────────────────────────────────── */
+// Score voices by quality so we pick the best one available on the user's device.
+// Premium/neural voices get a big boost; cloud voices win over local synth.
+function rankVoice(v) {
+  let s = 0;
+  const n = v.name || "";
+  if (/Natural/i.test(n)) s += 220;          // Microsoft Edge neural ("Aria Natural")
+  if (/Neural/i.test(n)) s += 220;
+  if (/Wavenet/i.test(n)) s += 220;          // Google Wavenet (rare in browser, but)
+  if (/Premium/i.test(n)) s += 170;          // Apple premium voices
+  if (/Enhanced/i.test(n)) s += 170;
+  if (/^Siri/i.test(n)) s += 150;            // Apple Siri voices
+  if (/Online/i.test(n)) s += 120;           // Microsoft cloud voices
+  if (/Google/i.test(n)) s += 90;
+  if (v.localService === false) s += 30;
+  if (/Compact|eSpeak|Microsoft .* Desktop/i.test(n)) s -= 100;
+  return s;
+}
+
+const FEMALE_HINTS = ["aria","jenny","ava","emma","samantha","karen","susan","allison","zira","cortana","clara","nova","kate","kim","rosa","wendy","fiona","tessa","sara","sandy","monica","veena","catherine","linda","amelie","amelia","libby","sonia","olivia","emily","michelle","heather","clear voice 1","siri voice 1","siri voice 4","yuna"];
+const MALE_HINTS = ["guy","tony","jacob","brandon","daniel","alex","tom","mike","david","mark","ryan","james","george","aaron","brian","eric","fred","reed","arthur","oliver","william","matthew","ralph","ravi","siri voice 2","siri voice 3","jorge","diego","albert","fred"];
+function voiceGender(v) {
+  const n = (v.name || "").toLowerCase();
+  if (FEMALE_HINTS.some(h => n.includes(h))) return "female";
+  if (MALE_HINTS.some(h => n.includes(h))) return "male";
+  if (/female/i.test(n)) return "female";
+  if (/male/i.test(n)) return "male";
+  return "neutral";
+}
+
+function pickBestVoice(voices, { lang = "en-US", preferGender = "any" } = {}) {
+  let pool = voices.filter(v => v.lang === lang);
+  if (pool.length === 0) pool = voices.filter(v => v.lang?.startsWith(lang.split("-")[0]));
+  if (pool.length === 0) pool = voices;
+  if (preferGender !== "any") {
+    const matched = pool.filter(v => voiceGender(v) === preferGender);
+    if (matched.length > 0) pool = matched;
+  }
+  return [...pool].sort((a, b) => rankVoice(b) - rankVoice(a))[0];
+}
+
 function useTTS() {
   const [speaking, setSpeaking] = useState(false);
+  const [voices, setVoices] = useState([]);
   const voicesRef = useRef([]);
 
-  // Cache voices as soon as they're available
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const load = () => {
       const v = window.speechSynthesis.getVoices();
-      if (v.length > 0) voicesRef.current = v;
+      if (v.length > 0) {
+        voicesRef.current = v;
+        setVoices(v);
+      }
     };
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
-  // Call this SYNCHRONOUSLY inside a click handler before any async work.
-  // It speaks an empty utterance then immediately cancels it, which "unlocks"
-  // the speech synthesis context so later async speak() calls are allowed by Chrome.
   const unlock = useCallback(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const dummy = new SpeechSynthesisUtterance("");
@@ -230,25 +279,22 @@ function useTTS() {
     window.speechSynthesis.cancel();
   }, []);
 
-  const speak = useCallback((text) => {
+  // opts.voice = a SpeechSynthesisVoice instance (override); opts.preferGender for auto-pick
+  const speak = useCallback((text, opts = {}) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     const go = () => {
       window.speechSynthesis.cancel();
-      window.speechSynthesis.resume(); // unfreeze Chrome pause bug
+      window.speechSynthesis.resume();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = "en-US";
-      utt.rate = 0.9;
-      const voices = voicesRef.current.length > 0
-        ? voicesRef.current
-        : window.speechSynthesis.getVoices();
-      const enVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google"))
-        || voices.find(v => v.lang === "en-US")
-        || voices.find(v => v.lang.startsWith("en"));
-      if (enVoice) utt.voice = enVoice;
+      utt.rate = opts.rate ?? 0.95;
+      utt.pitch = opts.pitch ?? 1.0;
+      const list = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
+      const chosen = opts.voice || pickBestVoice(list, { lang: "en-US", preferGender: opts.preferGender });
+      if (chosen) utt.voice = chosen;
       utt.onstart = () => setSpeaking(true);
       utt.onend = () => setSpeaking(false);
       utt.onerror = () => setSpeaking(false);
-      // Small delay gives Chrome time to settle after cancel()
       setTimeout(() => window.speechSynthesis.speak(utt), 80);
     };
 
@@ -272,7 +318,7 @@ function useTTS() {
     setSpeaking(false);
   }, []);
 
-  return { speak, stop, speaking, unlock };
+  return { speak, stop, speaking, unlock, voices };
 }
 
 /* ── STT ─────────────────────────────────────────────────────── */
@@ -322,9 +368,9 @@ const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
 
 /* ── DIFFICULTY CONFIG ───────────────────────────────────────── */
 const DIFF_STATIC = {
-  easy:   { name: "Sam Rivera",   title: "HR Coordinator",                  label: "Easy",     emoji: "🟢" },
-  medium: { name: "Jordan Mills", title: "Senior Talent Acquisition Manager", label: "Standard", emoji: "🟡" },
-  hard:   { name: "Morgan Price", title: "VP of Talent & Strategy",          label: "Hard",     emoji: "🔴" },
+  easy:   { name: "Sam Rivera",   title: "HR Coordinator",                  label: "Easy",     emoji: "🟢", preferGender: "female", rate: 0.98 },
+  medium: { name: "Jordan Mills", title: "Senior Talent Acquisition Manager", label: "Standard", emoji: "🟡", preferGender: "any",    rate: 0.95 },
+  hard:   { name: "Morgan Price", title: "VP of Talent & Strategy",          label: "Hard",     emoji: "🔴", preferGender: "male",   rate: 0.92 },
 };
 
 function makePersona(diff, cmp) {
@@ -369,8 +415,17 @@ export default function App() {
 
   const chatEndRef = useRef(null);
   const jobRoleRef = useRef(null);
-  const { speak, stop, speaking, unlock } = useTTS();
+  const { speak: rawSpeak, stop, speaking, unlock, voices } = useTTS();
   const { recording, supported: micOk, startRec, stopRec } = useSTT();
+
+  // Selected voice (null = auto-pick best for persona)
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState(null);
+
+  const speak = useCallback((text) => {
+    const cfg = DIFF_STATIC[difficulty];
+    const chosen = selectedVoiceURI ? voices.find(v => v.voiceURI === selectedVoiceURI) : null;
+    rawSpeak(text, { voice: chosen, preferGender: cfg.preferGender, rate: cfg.rate });
+  }, [rawSpeak, voices, selectedVoiceURI, difficulty]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -740,6 +795,37 @@ Respond ONLY with valid JSON, no extra text or markdown:
                     </div>
                   </div>
                   <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {cfg.label}</span>
+                </div>
+              );
+            })()}
+
+            {/* Voice picker */}
+            {voices.length > 0 && (() => {
+              const cfg = DIFF_STATIC[difficulty];
+              const englishOnly = voices.filter(v => v.lang?.startsWith("en"));
+              const topVoices = [...englishOnly].sort((a, b) => rankVoice(b) - rankVoice(a)).slice(0, 10);
+              const preview = () => {
+                unlock();
+                speak(`Hi, I'm ${cfg.name.split(" ")[0]}, your interviewer today.`);
+              };
+              return (
+                <div className="voice-row">
+                  <span className="voice-label">🔊 Voice</span>
+                  <select
+                    className="voice-select"
+                    value={selectedVoiceURI || ""}
+                    onChange={e => setSelectedVoiceURI(e.target.value || null)}
+                  >
+                    <option value="">Auto · best for {cfg.name.split(" ")[0]}</option>
+                    {topVoices.map(v => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {v.name} {v.lang !== "en-US" ? `(${v.lang})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <button className="voice-preview" onClick={preview} disabled={speaking}>
+                    ▶
+                  </button>
                 </div>
               );
             })()}
