@@ -532,6 +532,8 @@ export default function App() {
   const faceSamplesRef = useRef({ total: 0, present: 0, eyeContact: 0 });
   const [faceMetrics, setFaceMetrics] = useState(null);
   const [faceAnalysisActive, setFaceAnalysisActive] = useState(false);
+  const [speechStats, setSpeechStats] = useState(null);
+  const interviewStartRef = useRef(0);
 
   // Interview
   const [apiMessages, setApiMessages] = useState([]);
@@ -630,6 +632,7 @@ INTERVIEW RULES (follow strictly):
       setApiMessages([...trigger, { role: "assistant", content: text }]);
       setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
       setPhase("interview");
+      interviewStartRef.current = Date.now();
       speak(text);
     } catch (e) {
       setDisplayMessages([]);
@@ -713,6 +716,9 @@ Be specific to what they actually said — don't give generic advice. No bullet 
   const finishInterview = async (history) => {
     setPhase("done");
     setEvalLoading(true);
+    const elapsedSecs = interviewStartRef.current ? (Date.now() - interviewStartRef.current) / 1000 : 0;
+    const userMsgsForStats = history.filter(m => m.role === "user" && m.content !== "[START]");
+    setSpeechStats({ ...analyzeSpeech(userMsgsForStats, elapsedSecs), totalSecs: elapsedSecs });
     if (recordingActive) {
       setRecordDuration((Date.now() - recordStart) / 1000);
       stopRecording();
@@ -825,6 +831,7 @@ DRILL RULES:
       setApiMessages([...trigger, { role: "assistant", content: text }]);
       setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
       setPhase("interview");
+      interviewStartRef.current = Date.now();
       // Override buildSystem for subsequent turns by stashing the drill system on a ref
       drillSystemRef.current = drillSystem;
       speak(text);
@@ -961,6 +968,7 @@ DRILL RULES:
     setTips({}); setLoadingTips({});
     setRecordedUrl(null); setRecordedMime(null); setRecordDuration(0);
     setCameraErr(""); setFaceMetrics(null);
+    setSpeechStats(null);
     drillSystemRef.current = null;
   };
 
@@ -1325,69 +1333,76 @@ DRILL RULES:
               </>
             )}
 
-            {/* ── VIDEO REVIEW ── */}
-            {recordedUrl && (() => {
-              const userMessages = apiMessages.filter(m => m.role === "user" && m.content !== "[START]");
-              const audio = analyzeSpeech(userMessages, recordDuration);
-              const pace = paceLabel(audio.wpm);
+            {/* ── SPEECH ANALYTICS (always shown) ── */}
+            {speechStats && (() => {
+              const pace = paceLabel(speechStats.wpm);
               return (
                 <div className="video-review">
                   <div className="video-review-head">
-                    <span className="video-review-title">📹 Video review</span>
-                    <a
-                      href={recordedUrl}
-                      download={`interview-${new Date().toISOString().slice(0,10)}.${recordedMime?.includes("mp4") ? "mp4" : "webm"}`}
-                      className="video-review-dl"
-                    >
-                      ⬇ Download
-                    </a>
+                    <span className="video-review-title">🎤 Speech analytics</span>
                   </div>
-                  <video src={recordedUrl} controls playsInline className="video-review-player" />
                   <div className="video-stats">
                     <div className="video-stat">
-                      <div className={`video-stat-val ${pace.tone}`}>{audio.wpm || "—"}</div>
+                      <div className={`video-stat-val ${pace.tone}`}>{speechStats.wpm || "—"}</div>
                       <div className="video-stat-lbl">Words / min</div>
                       <div className="video-stat-sub">{pace.text}</div>
                     </div>
                     <div className="video-stat">
-                      <div className={`video-stat-val ${audio.fillerTotal === 0 ? "great" : audio.fillerTotal < 6 ? "ok" : "low"}`}>
-                        {audio.fillerTotal}
+                      <div className={`video-stat-val ${speechStats.fillerTotal === 0 ? "great" : speechStats.fillerTotal < 6 ? "ok" : "low"}`}>
+                        {speechStats.fillerTotal}
                       </div>
                       <div className="video-stat-lbl">Filler words</div>
                       <div className="video-stat-sub">
-                        {audio.topFillers.length === 0 ? "Clean delivery" : audio.topFillers.map(([w, n]) => `"${w}" ×${n}`).join(", ")}
+                        {speechStats.topFillers.length === 0 ? "Clean delivery" : speechStats.topFillers.map(([w, n]) => `"${w}" ×${n}`).join(", ")}
                       </div>
                     </div>
                     <div className="video-stat">
-                      <div className="video-stat-val">{audio.wordCount}</div>
+                      <div className="video-stat-val">{speechStats.wordCount}</div>
                       <div className="video-stat-lbl">Total words</div>
-                      <div className="video-stat-sub">in {Math.round(recordDuration)}s</div>
+                      <div className="video-stat-sub">in {Math.round(speechStats.totalSecs)}s</div>
                     </div>
                   </div>
-                  {faceMetrics && faceMetrics.samples > 5 && (() => {
-                    const pres = presenceLabel(faceMetrics.presence);
-                    const eye = eyeContactLabel(faceMetrics.eyeContact);
-                    return (
-                      <div className="video-stats">
-                        <div className="video-stat">
-                          <div className={`video-stat-val ${pres.tone}`}>{Math.round(faceMetrics.presence * 100)}%</div>
-                          <div className="video-stat-lbl">In frame</div>
-                          <div className="video-stat-sub">{pres.text}</div>
-                        </div>
-                        <div className="video-stat">
-                          <div className={`video-stat-val ${eye.tone}`}>{Math.round(faceMetrics.eyeContact * 100)}%</div>
-                          <div className="video-stat-lbl">Eye contact</div>
-                          <div className="video-stat-sub">{eye.text}</div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  <div className="tip-box" style={{ marginTop: 0, marginBottom: 20 }}>
-                    🎤 {audio.energyHint}
+                  <div className="tip-box" style={{ marginTop: 0, marginBottom: 0 }}>
+                    🎤 {speechStats.energyHint}
                   </div>
                 </div>
               );
             })()}
+
+            {/* ── VIDEO REVIEW ── */}
+            {recordedUrl && (
+              <div className="video-review">
+                <div className="video-review-head">
+                  <span className="video-review-title">📹 Video review</span>
+                  <a
+                    href={recordedUrl}
+                    download={`interview-${new Date().toISOString().slice(0,10)}.${recordedMime?.includes("mp4") ? "mp4" : "webm"}`}
+                    className="video-review-dl"
+                  >
+                    ⬇ Download
+                  </a>
+                </div>
+                <video src={recordedUrl} controls playsInline className="video-review-player" />
+                {faceMetrics && faceMetrics.samples > 5 && (() => {
+                  const pres = presenceLabel(faceMetrics.presence);
+                  const eye = eyeContactLabel(faceMetrics.eyeContact);
+                  return (
+                    <div className="video-stats">
+                      <div className="video-stat">
+                        <div className={`video-stat-val ${pres.tone}`}>{Math.round(faceMetrics.presence * 100)}%</div>
+                        <div className="video-stat-lbl">In frame</div>
+                        <div className="video-stat-sub">{pres.text}</div>
+                      </div>
+                      <div className="video-stat">
+                        <div className={`video-stat-val ${eye.tone}`}>{Math.round(faceMetrics.eyeContact * 100)}%</div>
+                        <div className="video-stat-lbl">Eye contact</div>
+                        <div className="video-stat-sub">{eye.text}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             <button className="btn" onClick={startInterview} disabled={startLoading}>
               {startLoading ? "Preparing..." : "Repeat interview →"}
