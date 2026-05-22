@@ -389,7 +389,10 @@ export default function Landing() {
       <nav>
         <a href="#" className="nav-logo">InterviewHub</a>
         <div className="nav-actions">
-          <button className="nav-lang" onClick={() => setLang(l => l === "en" ? "es" : "en")}>
+          <button
+            onClick={() => setLang(l => l === "en" ? "es" : "en")}
+            style={{padding:"9px 18px",borderRadius:9,background:"linear-gradient(135deg,#2020a0,#4040cc)",border:"2px solid #6060ff",color:"#fff",fontFamily:"'Syne',sans-serif",fontSize:".85rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",boxShadow:"0 0 16px #4040cc60"}}
+          >
             {L.langToggle}
           </button>
           <a href="#pricing" className="nav-link">{L.pricing}</a>
