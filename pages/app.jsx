@@ -329,11 +329,12 @@ function useTTS() {
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
       const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = "en-US";
+      const ttsLang = opts.lang || "en-US";
+      utt.lang = ttsLang;
       utt.rate = opts.rate ?? 0.95;
       utt.pitch = opts.pitch ?? 1.0;
       const list = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-      const chosen = opts.voice || pickBestVoice(list, { lang: "en-US", preferGender: opts.preferGender });
+      const chosen = opts.voice || pickBestVoice(list, { lang: ttsLang, preferGender: opts.preferGender });
       if (chosen) utt.voice = chosen;
       utt.onstart = () => setSpeaking(true);
       utt.onend = () => setSpeaking(false);
@@ -389,8 +390,9 @@ function useSTT() {
     rec.onerror = () => setRecording(false);
     recRef.current = rec;
   }, []);
-  const startRec = useCallback((onChunk) => {
+  const startRec = useCallback((onChunk, recLang = "en-US") => {
     cbRef.current = onChunk;
+    if (recRef.current) recRef.current.lang = recLang;
     try { recRef.current?.start(); setRecording(true); } catch (e) { console.warn(e); }
   }, []);
   const stopRec = useCallback(() => {
@@ -401,11 +403,118 @@ function useSTT() {
 }
 
 /* ── CONSTANTS ───────────────────────────────────────────────── */
-const EXAMPLES = [
-  { role: "UX/UI Designer", company: "Tech Startup", jd: "We are looking for a UX/UI Designer with experience in Figma, user research, rapid prototyping, and agile team collaboration. Systems thinking and a passion for usability are highly valued." },
-  { role: "Executive Assistant", company: "Consulting Firm", jd: "Executive assistant responsible for calendar management, meeting coordination, document handling, internal client support, and assistance to senior leadership." },
-  { role: "Marketing Manager", company: "Digital Agency", jd: "Marketing manager with experience in social media strategy, content creation, metrics analysis, community management, and digital campaigns for consumer brands." },
-];
+const EXAMPLES = {
+  en: [
+    { role: "UX/UI Designer", company: "Tech Startup", jd: "We are looking for a UX/UI Designer with experience in Figma, user research, rapid prototyping, and agile team collaboration. Systems thinking and a passion for usability are highly valued." },
+    { role: "Executive Assistant", company: "Consulting Firm", jd: "Executive assistant responsible for calendar management, meeting coordination, document handling, internal client support, and assistance to senior leadership." },
+    { role: "Marketing Manager", company: "Digital Agency", jd: "Marketing manager with experience in social media strategy, content creation, metrics analysis, community management, and digital campaigns for consumer brands." },
+  ],
+  es: [
+    { role: "Diseñador UX/UI", company: "Startup Tech", jd: "Buscamos un Diseñador UX/UI con experiencia en Figma, investigación de usuarios, prototipado rápido y colaboración en equipos ágiles. Pensamiento sistémico y pasión por la usabilidad son muy valorados." },
+    { role: "Asistente Ejecutivo", company: "Firma Consultora", jd: "Asistente ejecutivo responsable de gestión de agenda, coordinación de reuniones, manejo de documentos, soporte a clientes internos y asistencia a la alta dirección." },
+    { role: "Gerente de Marketing", company: "Agencia Digital", jd: "Gerente de marketing con experiencia en estrategia en redes sociales, creación de contenido, análisis de métricas, gestión de comunidades y campañas digitales para marcas de consumo." },
+  ],
+};
+
+/* ── TRANSLATIONS ────────────────────────────────────────────── */
+const STRINGS = {
+  en: {
+    tag: "// AI Interview Trainer · with voice",
+    title: "Practice for the job you want",
+    subtitle: "Real conversation with an AI interviewer",
+    steps: ["Your job", "Interview", "Results"],
+    setupTitle: "What job are you applying for?",
+    setupDesc: "Paste the job posting link and we'll analyze it automatically, or fill in the fields manually.",
+    urlPlaceholder: "Paste a job posting link (Greenhouse, Lever, Workday, company career pages)",
+    urlBtn: "✦ Analyze", urlAnalyzing: "Analyzing...", readingJob: "Reading the job posting...",
+    orFill: "or fill manually",
+    positionLabel: "Position", companyLabel: "Company",
+    positionPlaceholder: "e.g. UX/UI Designer", companyPlaceholder: "e.g. Google (optional)",
+    jdLabel: "Job Description",
+    jdPlaceholder: "Paste the job posting text here: requirements, responsibilities, skills...",
+    quickExamples: "Quick examples:",
+    numQLabel: "Number of questions", diffLabel: "Difficulty",
+    diffOpts: [
+      { key: "easy",   label: "Easy",     sub: "Encouraging"    },
+      { key: "medium", label: "Standard", sub: "Balanced"       },
+      { key: "hard",   label: "Hard",     sub: "FAANG Bootcamp" },
+    ],
+    recordLabel: "Record yourself",
+    recordDesc: "Watch your interview back · count fillers · check pace · 100% private, stays on your device",
+    startBtn: "Start interview →", preparingBtn: "Preparing interviewer...",
+    settingUp: "Setting up your AI interviewer...",
+    coachTitle: "Your coach", avgScore: "Avg score", totalInterviews: "Total interviews",
+    focusArea: "Focus area:", quickDrill: "Quick drill · 3 questions →", preparingDrill: "Preparing...",
+    liveLabel: "Live interview", typingLabel: "· typing...", speakingLabel: "· speaking...",
+    voiceLabel: "🔊 Voice", voiceAuto: (n) => `Auto · best for ${n}`,
+    answerPlaceholder: "Your answer...", aiTypingPlaceholder: (n) => `${n} is typing...`,
+    endBtn: "End interview and see results",
+    coachTipLabel: "💬 Coach tip", coachAnalyzing: "💬 coach analyzing...",
+    doneTitle: "Interview complete 🎉", evalFor: "Evaluation for",
+    analyzingPerf: "Analyzing your performance...", scoreLabel: "Overall score",
+    strengthsLabel: "Strengths", improvLabel: "Areas for improvement",
+    speechTitle: "🎤 Speech analytics", wpmLabel: "Words / min",
+    fillerLabel: "Filler words", totalWordsLabel: "Total words", cleanDelivery: "Clean delivery",
+    videoTitle: "📹 Video review", downloadLabel: "⬇ Download",
+    inFrameLabel: "In frame", eyeLabel: "Eye contact",
+    repeatBtn: "Repeat interview →", anotherBtn: "Practice for another job",
+    pastLabel: "Past interviews", clearLabel: "Clear",
+    weakLabels: {
+      behavioral_specifics: "Concrete examples (STAR)", technical_depth: "Technical depth",
+      communication_clarity: "Clear communication",    structuring_answers: "Structuring answers",
+      energy_engagement: "Energy & engagement",        confidence: "Confidence",
+      job_alignment: "Job alignment",                  filler_words: "Filler words",
+    },
+  },
+  es: {
+    tag: "// Entrenador de entrevistas con IA · con voz",
+    title: "Practica para el trabajo que quieres",
+    subtitle: "Conversación real con un entrevistador de IA",
+    steps: ["Tu puesto", "Entrevista", "Resultados"],
+    setupTitle: "¿A qué puesto estás aplicando?",
+    setupDesc: "Pega el link de la vacante y lo analizamos automáticamente, o llena los campos manualmente.",
+    urlPlaceholder: "Pega el link de la vacante (Greenhouse, Lever, Workday, portales de empresa)",
+    urlBtn: "✦ Analizar", urlAnalyzing: "Analizando...", readingJob: "Leyendo la vacante...",
+    orFill: "o llena manualmente",
+    positionLabel: "Puesto", companyLabel: "Empresa",
+    positionPlaceholder: "ej. Diseñador UX/UI", companyPlaceholder: "ej. Google (opcional)",
+    jdLabel: "Descripción del puesto",
+    jdPlaceholder: "Pega aquí el texto de la vacante: requisitos, responsabilidades, habilidades...",
+    quickExamples: "Ejemplos rápidos:",
+    numQLabel: "Número de preguntas", diffLabel: "Dificultad",
+    diffOpts: [
+      { key: "easy",   label: "Fácil",    sub: "Amigable"       },
+      { key: "medium", label: "Estándar", sub: "Balanceado"     },
+      { key: "hard",   label: "Difícil",  sub: "Big Tech Brutal"},
+    ],
+    recordLabel: "Grabarte en video",
+    recordDesc: "Mira tu entrevista después · cuenta muletillas · revisa tu ritmo · 100% privado, no sale de tu dispositivo",
+    startBtn: "Iniciar entrevista →", preparingBtn: "Preparando entrevistador...",
+    settingUp: "Configurando tu entrevistador de IA...",
+    coachTitle: "Tu coach", avgScore: "Puntaje promedio", totalInterviews: "Entrevistas totales",
+    focusArea: "Área de enfoque:", quickDrill: "Ejercicio rápido · 3 preguntas →", preparingDrill: "Preparando...",
+    liveLabel: "Entrevista en vivo", typingLabel: "· escribiendo...", speakingLabel: "· hablando...",
+    voiceLabel: "🔊 Voz", voiceAuto: (n) => `Auto · mejor para ${n}`,
+    answerPlaceholder: "Tu respuesta...", aiTypingPlaceholder: (n) => `${n} está escribiendo...`,
+    endBtn: "Terminar entrevista y ver resultados",
+    coachTipLabel: "💬 Consejo del coach", coachAnalyzing: "💬 coach analizando...",
+    doneTitle: "Entrevista completa 🎉", evalFor: "Evaluación para",
+    analyzingPerf: "Analizando tu desempeño...", scoreLabel: "Puntaje general",
+    strengthsLabel: "Fortalezas", improvLabel: "Áreas de mejora",
+    speechTitle: "🎤 Análisis del habla", wpmLabel: "Palabras / min",
+    fillerLabel: "Muletillas", totalWordsLabel: "Total de palabras", cleanDelivery: "Entrega limpia",
+    videoTitle: "📹 Revisión de video", downloadLabel: "⬇ Descargar",
+    inFrameLabel: "En cuadro", eyeLabel: "Contacto visual",
+    repeatBtn: "Repetir entrevista →", anotherBtn: "Practicar para otro puesto",
+    pastLabel: "Entrevistas anteriores", clearLabel: "Borrar",
+    weakLabels: {
+      behavioral_specifics: "Ejemplos concretos (STAR)", technical_depth: "Profundidad técnica",
+      communication_clarity: "Comunicación clara",       structuring_answers: "Estructura de respuestas",
+      energy_engagement: "Energía y presencia",          confidence: "Confianza",
+      job_alignment: "Alineación con el puesto",         filler_words: "Muletillas",
+    },
+  },
+};
 
 const SC = n => n >= 80 ? "great" : n >= 60 ? "ok" : "low";
 
@@ -416,7 +525,7 @@ const FILLER_WORDS = [
   "kind of", "kinda", "sort of", "sorta", "basically", "literally", "actually", "honestly",
   "este", "o sea", "pues", "como que", "tipo", "no sé", "este...",
 ];
-function analyzeSpeech(userMessages, totalSeconds) {
+function analyzeSpeech(userMessages, totalSeconds, lang = "en") {
   const joined = userMessages.map(m => m.content).join(" ").toLowerCase();
   const wordCount = (joined.match(/\b[\w']+\b/g) || []).length;
   const wpm = totalSeconds > 0 ? Math.round((wordCount / totalSeconds) * 60) : 0;
@@ -428,17 +537,28 @@ function analyzeSpeech(userMessages, totalSeconds) {
     if (matches?.length) { fillerHits[f] = matches.length; fillerTotal += matches.length; }
   }
   const topFillers = Object.entries(fillerHits).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  // Quick energy heuristic: variation in sentence length
   const sentences = joined.split(/[.!?]+/).filter(s => s.trim().length > 3);
   const lens = sentences.map(s => s.trim().split(/\s+/).length);
   const avgLen = lens.length ? lens.reduce((a, b) => a + b, 0) / lens.length : 0;
   const variance = lens.length ? lens.reduce((s, l) => s + (l - avgLen) ** 2, 0) / lens.length : 0;
-  const energyHint = variance < 4 ? "Try varying your sentence length — mix short and long for impact"
-    : variance > 60 ? "Good variation in sentence length — keeps the listener engaged"
-    : "Decent rhythm in your answers";
+  const energyHint = lang === "es"
+    ? (variance < 4 ? "Intenta variar la longitud de tus oraciones — mezcla cortas y largas para mayor impacto"
+      : variance > 60 ? "Buena variación en longitud de oraciones — mantiene la atención del oyente"
+      : "Buen ritmo general en tus respuestas")
+    : (variance < 4 ? "Try varying your sentence length — mix short and long for impact"
+      : variance > 60 ? "Good variation in sentence length — keeps the listener engaged"
+      : "Decent rhythm in your answers");
   return { wordCount, wpm, fillerTotal, topFillers, energyHint };
 }
-function paceLabel(wpm) {
+function paceLabel(wpm, lang = "en") {
+  if (lang === "es") {
+    if (wpm === 0) return { tone: "ok", text: "Sin datos de ritmo" };
+    if (wpm < 110) return { tone: "low", text: "Muy lento — acelera el ritmo" };
+    if (wpm < 140) return { tone: "ok", text: "Un poco lento" };
+    if (wpm <= 170) return { tone: "great", text: "Ritmo perfecto" };
+    if (wpm <= 200) return { tone: "ok", text: "Un poco rápido" };
+    return { tone: "low", text: "Demasiado rápido — frena" };
+  }
   if (wpm === 0) return { tone: "ok", text: "No pace data" };
   if (wpm < 110) return { tone: "low", text: "Too slow — pick up the pace" };
   if (wpm < 140) return { tone: "ok", text: "Slightly slow" };
@@ -470,12 +590,22 @@ async function loadFaceLandmarker() {
   return faceLandmarkerPromise;
 }
 
-function presenceLabel(pct) {
+function presenceLabel(pct, lang = "en") {
+  if (lang === "es") {
+    if (pct >= 0.9) return { tone: "great", text: "Bien encuadrado" };
+    if (pct >= 0.7) return { tone: "ok", text: "Saliste del cuadro ocasionalmente" };
+    return { tone: "low", text: "Frecuentemente fuera de cuadro" };
+  }
   if (pct >= 0.9) return { tone: "great", text: "Stayed in frame" };
   if (pct >= 0.7) return { tone: "ok", text: "Slipped out occasionally" };
   return { tone: "low", text: "Often out of frame" };
 }
-function eyeContactLabel(pct) {
+function eyeContactLabel(pct, lang = "en") {
+  if (lang === "es") {
+    if (pct >= 0.7) return { tone: "great", text: "Buen contacto visual" };
+    if (pct >= 0.45) return { tone: "ok", text: "Aceptable, podría ser más directo" };
+    return { tone: "low", text: "Desvías la mirada con frecuencia" };
+  }
   if (pct >= 0.7) return { tone: "great", text: "Strong eye contact" };
   if (pct >= 0.45) return { tone: "ok", text: "Decent, could be more direct" };
   return { tone: "low", text: "Looking away too often" };
@@ -488,8 +618,16 @@ const DIFF_STATIC = {
   hard:   { name: "Morgan Price", title: "VP of Talent & Strategy",          label: "Hard",     emoji: "🔴", preferGender: "male",   rate: 0.92 },
 };
 
-function makePersona(diff, cmp) {
-  const c = cmp || "the company";
+function makePersona(diff, cmp, lang = "en") {
+  const c = cmp || (lang === "es" ? "la empresa" : "the company");
+  if (lang === "es") {
+    if (diff === "easy") return `Eres Sam Rivera, coordinadora de RH amigable en ${c}. Genuinamente quieres ayudar a los candidatos a tener éxito y sentirse cómodos.
+TU ESTILO: Cálida, alentadora, paciente. Das retroalimentación positiva frecuentemente. Haces seguimientos suaves como "¡Qué interesante! ¿Me puedes contar más sobre eso?" Si una respuesta es débil, das pistas amables. Toda la entrevista es completamente en español.`;
+    if (diff === "medium") return `Eres Jordan Mills, Gerente Senior de Adquisición de Talento en ${c}. Profesional y justo.
+TU ESTILO: Balanceado y profesional. Reconoces respuestas sólidas genuinamente. Profundizas buscando especificidad. No aceptas respuestas vagas pero no eres duro. Toda la entrevista es completamente en español.`;
+    return `Eres Morgan Price, VP de Talento y Estrategia en ${c}. Solo contratas al top 5% y tus entrevistas son conocidas por ser muy difíciles.
+TU ESTILO: Directo, escéptico, exigente. Cuestionas casi cada respuesta — incluso las buenas — para probar cómo el candidato maneja la presión. Pides métricas, números y resultados concretos. Si no los tienen, presionas: "¿Cuál fue el impacto real? ¿Cuáles fueron los números?" Frecuentemente preguntas "¿Por qué?" y "¿Y qué?" No eres cruel pero eres implacable. Toda la entrevista es completamente en español.`;
+  }
   if (diff === "easy") return `You are Sam Rivera, a friendly HR Coordinator at ${c}. You genuinely want to help candidates succeed and feel comfortable.
 YOUR STYLE: Warm, encouraging, patient. You give positive reinforcement often. You accept answers that show general relevant experience even without perfect specifics. You ask gentle follow-ups like "That's interesting — could you tell me a bit more about that?" You rarely push back hard; if an answer is weak, you give a hint: "Maybe think of a specific time when..." You celebrate good answers enthusiastically.`;
   if (diff === "medium") return `You are Jordan Mills, a Senior Talent Acquisition Manager at ${c}. Professional and fair.
@@ -501,6 +639,8 @@ YOUR STYLE: Direct, skeptical, demanding. You challenge almost every answer — 
 /* ── APP ─────────────────────────────────────────────────────── */
 export default function App() {
   const [phase, setPhase] = useState("setup");
+  const [lang, setLang] = useState("en");
+  const t = STRINGS[lang];
   const { history, addEntry, clearHistory } = useHistory();
 
   // Setup
@@ -560,8 +700,9 @@ export default function App() {
   const speak = useCallback((text) => {
     const cfg = DIFF_STATIC[difficulty];
     const chosen = selectedVoiceURI ? voices.find(v => v.voiceURI === selectedVoiceURI) : null;
-    rawSpeak(text, { voice: chosen, preferGender: cfg.preferGender, rate: cfg.rate });
-  }, [rawSpeak, voices, selectedVoiceURI, difficulty]);
+    const ttsLang = lang === "es" ? "es-MX" : "en-US";
+    rawSpeak(text, { voice: chosen, preferGender: cfg.preferGender, rate: cfg.rate, lang: ttsLang });
+  }, [rawSpeak, voices, selectedVoiceURI, difficulty, lang]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -573,12 +714,19 @@ export default function App() {
     const jd   = opts.jd       ?? jdText;
     const nq   = opts.numQ     ?? numQ;
     const diff = opts.difficulty ?? difficulty;
+    const lng  = opts.lang ?? lang;
     const cfg  = DIFF_STATIC[diff];
-    return `${makePersona(diff, cmp)}
-
-Job description for ${role}: ${jd}
-
-INTERVIEW RULES (follow strictly):
+    const rules = lng === "es"
+      ? `REGLAS DE LA ENTREVISTA (sigue estrictamente):
+- Al recibir [START]: preséntate como ${cfg.name}, ${cfg.title}, menciona el puesto y haz tu primera pregunta basada en la descripción.
+- Haz exactamente ${nq} preguntas principales, cada una específica a la descripción del puesto.
+- Reacciona a las respuestas según tu estilo de personalidad.
+- Máximo 2 preguntas de seguimiento por pregunta principal antes de avanzar.
+- Mantén tus turnos CORTOS: 1-3 oraciones. Esto es una conversación.
+- Varía cómo empiezas cada respuesta — no repitas el mismo inicio.
+- Cuando todas las ${nq} preguntas hayan sido respondidas: cierra la entrevista naturalmente y agrega exactamente "|||END|||" al final.
+- Toda la entrevista debe ser completamente en español.`
+      : `INTERVIEW RULES (follow strictly):
 - When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
 - Ask exactly ${nq} main questions, each specific to the actual job description above.
 - React to answers according to your personality style above.
@@ -586,7 +734,8 @@ INTERVIEW RULES (follow strictly):
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
 - Vary how you start each response — don't repeat the same opener.
 - When all ${nq} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
-  }, [jobRole, company, jdText, numQ, difficulty]);
+    return `${makePersona(diff, cmp, lng)}\n\n${lng === "es" ? "Descripción del puesto" : "Job description"} for ${role}: ${jd}\n\n${rules}`;
+  }, [jobRole, company, jdText, numQ, difficulty, lang]);
 
   /* ── SCRAPE JOB URL ── */
   const [scrapeNote, setScrapeNote] = useState("");
@@ -644,8 +793,11 @@ INTERVIEW RULES (follow strictly):
   /* ── COACH TIP ── */
   const fetchTip = async (question, answer, msgIndex) => {
     setLoadingTips(prev => ({ ...prev, [msgIndex]: true }));
-    const coachSystem =
-      `You are a concise interview coach giving real-time feedback. The candidate just answered an interview question.
+    const coachSystem = lang === "es"
+      ? `Eres un coach de entrevistas conciso dando retroalimentación en tiempo real. El candidato acaba de responder una pregunta de entrevista.
+Responde en exactamente 2 oraciones en español: primero, algo que hicieron bien (o reconoce si fue débil); segundo, la mejora más impactante que podrían hacer a esa respuesta específica.
+Sé específico sobre lo que realmente dijeron — no des consejos genéricos. Sin viñetas, sin encabezados, solo 2 oraciones.`
+      : `You are a concise interview coach giving real-time feedback. The candidate just answered an interview question.
 Respond in exactly 2 sentences: first, one thing they did well (or acknowledge if it was weak); second, the single most impactful improvement they could make to that specific answer.
 Be specific to what they actually said — don't give generic advice. No bullet points, no headers, just 2 sentences.`;
     try {
@@ -718,7 +870,7 @@ Be specific to what they actually said — don't give generic advice. No bullet 
     setEvalLoading(true);
     const elapsedSecs = interviewStartRef.current ? (Date.now() - interviewStartRef.current) / 1000 : 0;
     const userMsgsForStats = history.filter(m => m.role === "user" && m.content !== "[START]");
-    setSpeechStats({ ...analyzeSpeech(userMsgsForStats, elapsedSecs), totalSecs: elapsedSecs });
+    setSpeechStats({ ...analyzeSpeech(userMsgsForStats, elapsedSecs, lang), totalSecs: elapsedSecs });
     if (recordingActive) {
       setRecordDuration((Date.now() - recordStart) / 1000);
       stopRecording();
@@ -788,7 +940,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
       stopRec();
     } else {
       setInputText("");
-      startRec(chunk => setInputText(prev => prev + chunk));
+      startRec(chunk => setInputText(prev => prev + chunk), lang === "es" ? "es-MX" : "en-US");
     }
   };
 
@@ -809,7 +961,20 @@ Respond ONLY with valid JSON, no extra text or markdown:
     setTips({}); setLoadingTips({});
     if (recordEnabled && !recordingActive) await startRecording();
 
-    const drillSystem = `${makePersona("medium", lastCompany)}
+    const weakLabel = (t.weakLabels[weakAreaCode] || area.label).toLowerCase();
+    const drillSystem = lang === "es"
+      ? `${makePersona("medium", lastCompany, "es")}
+
+Estás haciendo un EJERCICIO CORTO ENFOCADO en el área débil conocida del candidato: ${weakLabel}.
+
+REGLAS DEL EJERCICIO:
+- Haz exactamente 3 preguntas, todas enfocadas en esta área: ${weakLabel}.
+- Intro breve: "Hola, soy Jordan. Ejercicio rápido de 3 preguntas enfocado en ${weakLabel}."
+- Sin seguimientos. Avanza después de cada respuesta.
+- Reacciona brevemente a cada respuesta (1 oración) antes de la siguiente.
+- Después de la pregunta 3: cierra con una oración de retroalimentación y agrega "|||END|||" al final.
+- Mantén tus turnos CORTOS: 1-3 oraciones. Toda la sesión en español.`
+      : `${makePersona("medium", lastCompany, "en")}
 
 You are running a SHORT FOCUSED DRILL on the candidate's known weak area: ${area.label}.
 
@@ -991,17 +1156,25 @@ DRILL RULES:
       </Head>
       <style>{css}</style>
       <div className="shell">
-        <Link href="/" className="back-link">← InterviewHub</Link>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <Link href="/" className="back-link" style={{ marginBottom: 0 }}>← InterviewHub</Link>
+          <button
+            onClick={() => setLang(l => l === "en" ? "es" : "en")}
+            style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#6060cc", background: "#0d0d22", border: "1px solid #2a2a50", borderRadius: 8, padding: "5px 12px", cursor: "pointer", transition: "all .2s" }}
+          >
+            {lang === "en" ? "🌐 Español" : "🌐 English"}
+          </button>
+        </div>
         <div className="hd">
-          <div className="hd-tag">// AI Interview Trainer · with voice</div>
-          <div className="hd-title">Practice for the job you want</div>
-          <div className="hd-sub">Real conversation with an AI interviewer</div>
+          <div className="hd-tag">{t.tag}</div>
+          <div className="hd-title">{t.title}</div>
+          <div className="hd-sub">{t.subtitle}</div>
         </div>
 
         <div className="steps">
-          {[["Your job", 1], ["Interview", 2], ["Results", 3]].map(([lbl, n], i) => (
-            <div key={n} className={`step-btn${i < pi ? " done" : i === pi ? " active" : ""}`}>
-              <div className="step-num">{i < pi ? "✓" : n}</div>
+          {t.steps.map((lbl, i) => (
+            <div key={i} className={`step-btn${i < pi ? " done" : i === pi ? " active" : ""}`}>
+              <div className="step-num">{i < pi ? "✓" : i + 1}</div>
               {lbl}
             </div>
           ))}
@@ -1011,7 +1184,7 @@ DRILL RULES:
         {phase === "setup" && insights && insights.totalInterviews > 0 && (
           <div className="coach-card">
             <div className="coach-head">
-              <span className="coach-title">Your coach</span>
+              <span className="coach-title">{t.coachTitle}</span>
               {insights.streak > 0 && (
                 <span className="coach-streak">🔥 {insights.streak}-day streak</span>
               )}
@@ -1019,18 +1192,18 @@ DRILL RULES:
             <div className="coach-stats">
               <div className="coach-stat">
                 <div className="coach-stat-val">{insights.avg}</div>
-                <div className="coach-stat-lbl">Avg score</div>
+                <div className="coach-stat-lbl">{t.avgScore}</div>
               </div>
               <div className="coach-stat">
                 <div className="coach-stat-val">{insights.totalInterviews}</div>
-                <div className="coach-stat-lbl">Total interviews</div>
+                <div className="coach-stat-lbl">{t.totalInterviews}</div>
               </div>
             </div>
             {insights.topWeak && WEAK_AREAS[insights.topWeak] && (
               <>
                 <div className="coach-weak">
-                  <span className="coach-weak-lbl">Focus area:</span>
-                  <span className="coach-weak-val">{WEAK_AREAS[insights.topWeak].label}</span>
+                  <span className="coach-weak-lbl">{t.focusArea}</span>
+                  <span className="coach-weak-val">{t.weakLabels[insights.topWeak] || WEAK_AREAS[insights.topWeak].label}</span>
                 </div>
                 <button
                   className="btn"
@@ -1038,7 +1211,7 @@ DRILL RULES:
                   onClick={() => startDrill(insights.topWeak)}
                   disabled={startLoading}
                 >
-                  {startLoading ? "Preparing..." : `Quick drill · 3 questions →`}
+                  {startLoading ? t.preparingDrill : t.quickDrill}
                 </button>
               </>
             )}
@@ -1048,8 +1221,8 @@ DRILL RULES:
         {/* ── SETUP ── */}
         {phase === "setup" && (
           <div className="card" key="setup">
-            <div className="card-title">What job are you applying for?</div>
-            <div className="card-desc">Paste the job posting link and we'll analyze it automatically, or fill in the fields manually.</div>
+            <div className="card-title">{t.setupTitle}</div>
+            <div className="card-desc">{t.setupDesc}</div>
 
             <div className="url-bar">
               <input
@@ -1057,16 +1230,16 @@ DRILL RULES:
                 value={jobUrl}
                 onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); setScrapeNote(""); }}
                 onKeyDown={e => e.key === "Enter" && scrapeJob()}
-                placeholder="Paste a job posting link (works best with company career pages, Greenhouse, Lever, Workday)"
+                placeholder={t.urlPlaceholder}
               />
               <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
-                {scraping ? "Analyzing..." : "✦ Analyze"}
+                {scraping ? t.urlAnalyzing : t.urlBtn}
               </button>
             </div>
             {scraping && (
               <div className="loader" style={{ marginTop: -10, marginBottom: 10 }}>
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Reading the job posting...
+                {t.readingJob}
               </div>
             )}
             {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
@@ -1074,60 +1247,56 @@ DRILL RULES:
 
             <div className="url-divider">
               <div className="url-divider-line" />
-              <div className="url-divider-text">or fill manually</div>
+              <div className="url-divider-text">{t.orFill}</div>
               <div className="url-divider-line" />
             </div>
 
             <div className="row">
               <div className="field">
-                <label>Position</label>
-                <input ref={jobRoleRef} value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder="e.g. UX/UI Designer" />
+                <label>{t.positionLabel}</label>
+                <input ref={jobRoleRef} value={jobRole} onChange={e => setJobRole(e.target.value)} placeholder={t.positionPlaceholder} />
               </div>
               <div className="field">
-                <label>Company</label>
-                <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google (optional)" />
+                <label>{t.companyLabel}</label>
+                <input value={company} onChange={e => setCompany(e.target.value)} placeholder={t.companyPlaceholder} />
               </div>
             </div>
             <div className="field">
-              <label>Job Description</label>
+              <label>{t.jdLabel}</label>
               <textarea
                 rows={6}
-                placeholder="Paste the job posting text here: requirements, responsibilities, skills..."
+                placeholder={t.jdPlaceholder}
                 value={jdText}
                 onChange={e => setJdText(e.target.value)}
               />
             </div>
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: ".7rem", color: "#444", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>Quick examples:</div>
-              {EXAMPLES.map(ex => (
+              <div style={{ fontSize: ".7rem", color: "#444", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>{t.quickExamples}</div>
+              {EXAMPLES[lang].map(ex => (
                 <span key={ex.role} className="badge" onClick={() => { setJobRole(ex.role); setCompany(ex.company); setJdText(ex.jd); }}>
                   {ex.role}
                 </span>
               ))}
             </div>
             <div className="field" style={{ maxWidth: 220 }}>
-              <label>Number of questions</label>
+              <label>{t.numQLabel}</label>
               <select value={numQ} onChange={e => setNumQ(e.target.value)}>
-                <option value="3">3 — Quick</option>
-                <option value="5">5 — Standard</option>
-                <option value="7">7 — Full</option>
-                <option value="10">10 — Intensive</option>
+                <option value="3">3 — {lang === "es" ? "Rápida" : "Quick"}</option>
+                <option value="5">5 — {lang === "es" ? "Estándar" : "Standard"}</option>
+                <option value="7">7 — {lang === "es" ? "Completa" : "Full"}</option>
+                <option value="10">10 — {lang === "es" ? "Intensiva" : "Intensive"}</option>
               </select>
             </div>
             <div className="field">
-              <label>Difficulty</label>
+              <label>{t.diffLabel}</label>
               <div className="diff-row">
-                {[
-                  { key: "easy",   emoji: "🟢", label: "Easy",     sub: "Encouraging" },
-                  { key: "medium", emoji: "🟡", label: "Standard", sub: "Balanced"    },
-                  { key: "hard",   emoji: "🔴", label: "Hard",     sub: "FAANG Bootcamp"  },
-                ].map(({ key, emoji, label, sub }) => (
+                {t.diffOpts.map(({ key, label, sub }) => (
                   <button
                     key={key}
                     className={`diff-pill ${key}${difficulty === key ? " active" : ""}`}
                     onClick={() => setDifficulty(key)}
                   >
-                    {emoji} {label}
+                    {DIFF_STATIC[key].emoji} {label}
                     <div className="diff-sub">{sub}</div>
                   </button>
                 ))}
@@ -1140,8 +1309,8 @@ DRILL RULES:
             >
               <div className="record-toggle-icon">{recordEnabled ? "🔴" : "📹"}</div>
               <div className="record-toggle-text">
-                <strong>Record yourself</strong>
-                <span>Watch your interview back · count fillers · check pace · 100% private, stays on your device</span>
+                <strong>{t.recordLabel}</strong>
+                <span>{t.recordDesc}</span>
               </div>
               <div className={`record-toggle-switch${recordEnabled ? " on" : ""}`}>
                 <div className="record-toggle-knob" />
@@ -1150,12 +1319,12 @@ DRILL RULES:
             {cameraErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{cameraErr}</div>}
 
             <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
-              {startLoading ? "Preparing interviewer..." : "Start interview →"}
+              {startLoading ? t.preparingBtn : t.startBtn}
             </button>
             {startLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Setting up your AI interviewer...
+                {t.settingUp}
               </div>
             )}
             {startErr && <div className="err-box">{startErr}</div>}
@@ -1184,16 +1353,16 @@ DRILL RULES:
                   </div>
                   <div className="iv-info">
                     <div className="iv-name">{cfg.name}</div>
-                    <div className="iv-title">{cfg.title} · {company || "Company"}</div>
+                    <div className="iv-title">{cfg.title} · {company || (lang === "es" ? "Empresa" : "Company")}</div>
                     <div className="iv-status">
                       <div className="iv-dot" />
-                      <span className="iv-live">Live interview</span>
+                      <span className="iv-live">{t.liveLabel}</span>
                       <span className="iv-typing">
-                        {isStreaming ? "· typing..." : speaking ? "· speaking..." : ""}
+                        {isStreaming ? t.typingLabel : speaking ? t.speakingLabel : ""}
                       </span>
                     </div>
                   </div>
-                  <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {cfg.label}</span>
+                  <span className={`diff-badge ${difficulty}`}>{cfg.emoji} {t.diffOpts.find(d => d.key === difficulty)?.label || cfg.label}</span>
                 </div>
               );
             })()}
@@ -1201,24 +1370,27 @@ DRILL RULES:
             {/* Voice picker */}
             {voices.length > 0 && (() => {
               const cfg = DIFF_STATIC[difficulty];
-              const englishOnly = voices.filter(v => v.lang?.startsWith("en"));
-              const topVoices = [...englishOnly].sort((a, b) => rankVoice(b) - rankVoice(a)).slice(0, 10);
+              const ttsLangPrefix = lang === "es" ? "es" : "en";
+              const filteredVoices = voices.filter(v => v.lang?.startsWith(ttsLangPrefix));
+              const topVoices = [...filteredVoices].sort((a, b) => rankVoice(b) - rankVoice(a)).slice(0, 10);
               const preview = () => {
                 unlock();
-                speak(`Hi, I'm ${cfg.name.split(" ")[0]}, your interviewer today.`);
+                speak(lang === "es"
+                  ? `Hola, soy ${cfg.name.split(" ")[0]}, tu entrevistador hoy.`
+                  : `Hi, I'm ${cfg.name.split(" ")[0]}, your interviewer today.`);
               };
               return (
                 <div className="voice-row">
-                  <span className="voice-label">🔊 Voice</span>
+                  <span className="voice-label">{t.voiceLabel}</span>
                   <select
                     className="voice-select"
                     value={selectedVoiceURI || ""}
                     onChange={e => setSelectedVoiceURI(e.target.value || null)}
                   >
-                    <option value="">Auto · best for {cfg.name.split(" ")[0]}</option>
+                    <option value="">{t.voiceAuto(cfg.name.split(" ")[0])}</option>
                     {topVoices.map(v => (
                       <option key={v.voiceURI} value={v.voiceURI}>
-                        {v.name} {v.lang !== "en-US" ? `(${v.lang})` : ""}
+                        {v.name} {v.lang !== (lang === "es" ? "es-MX" : "en-US") ? `(${v.lang})` : ""}
                       </option>
                     ))}
                   </select>
@@ -1239,11 +1411,11 @@ DRILL RULES:
                     </div>
                   </div>
                   {msg.role === "user" && loadingTips[i] && (
-                    <div className="coach-tip-loading">💬 coach analyzing...</div>
+                    <div className="coach-tip-loading">{t.coachAnalyzing}</div>
                   )}
                   {msg.role === "user" && tips[i] && (
                     <div className="coach-tip">
-                      <div className="coach-tip-label">💬 Coach tip</div>
+                      <div className="coach-tip-label">{t.coachTipLabel}</div>
                       {tips[i]}
                     </div>
                   )}
@@ -1265,7 +1437,7 @@ DRILL RULES:
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
-                placeholder={aiThinking ? `${DIFF_STATIC[difficulty].name.split(" ")[0]} is typing...` : "Your answer..."}
+                placeholder={aiThinking ? t.aiTypingPlaceholder(DIFF_STATIC[difficulty].name.split(" ")[0]) : t.answerPlaceholder}
                 disabled={aiThinking}
               />
               <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>
@@ -1275,12 +1447,12 @@ DRILL RULES:
 
             {recording && (
               <div style={{ fontFamily:"'DM Mono',monospace", fontSize:".68rem", color:"#c060ff", textAlign:"center", marginTop:6 }}>
-                🔴 Recording — tap stop, then send
+                🔴 {lang === "es" ? "Grabando — para y luego envía" : "Recording — tap stop, then send"}
               </div>
             )}
 
             <button className="end-btn" onClick={() => finishInterview(apiMessages)}>
-              End interview and see results
+              {t.endBtn}
             </button>
           </div>
         )}
@@ -1288,15 +1460,15 @@ DRILL RULES:
         {/* ── RESULTS ── */}
         {phase === "done" && (
           <div className="card" key="done">
-            <div className="card-title">Interview complete 🎉</div>
+            <div className="card-title">{t.doneTitle}</div>
             <div className="card-desc" style={{ marginBottom: 20 }}>
-              Evaluation for <strong style={{ color: "#eeeeff" }}>{jobRole}</strong>{company ? ` at ${company}` : ""}
+              {t.evalFor} <strong style={{ color: "#eeeeff" }}>{jobRole}</strong>{company ? ` · ${company}` : ""}
             </div>
 
             {evalLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
-                Analyzing your performance...
+                {t.analyzingPerf}
               </div>
             )}
 
@@ -1305,12 +1477,12 @@ DRILL RULES:
                 <div className="summary-bar">
                   <div className={`summary-ring ${SC(evaluation.puntaje)}`}>{evaluation.puntaje}</div>
                   <div>
-                    <div className="summary-label">Overall score</div>
+                    <div className="summary-label">{t.scoreLabel}</div>
                     <div className="summary-val">{evaluation.nivel}</div>
                   </div>
                 </div>
                 <div className="fb">
-                  <div className="fb-head">Strengths</div>
+                  <div className="fb-head">{t.strengthsLabel}</div>
                   <div className="fb-body">
                     {evaluation.fortalezas?.map((f, i) => (
                       <div className="li" key={i}><span className="li-dot" style={{ color: "#4ecc96" }}>✓</span>{f}</div>
@@ -1318,7 +1490,7 @@ DRILL RULES:
                   </div>
                 </div>
                 <div className="fb">
-                  <div className="fb-head">Areas for improvement</div>
+                  <div className="fb-head">{t.improvLabel}</div>
                   <div className="fb-body">
                     {evaluation.mejoras?.map((m, i) => (
                       <div className="li" key={i}><span className="li-dot" style={{ color: "#f06060" }}>→</span>{m}</div>
@@ -1335,30 +1507,30 @@ DRILL RULES:
 
             {/* ── SPEECH ANALYTICS (always shown) ── */}
             {speechStats && (() => {
-              const pace = paceLabel(speechStats.wpm);
+              const pace = paceLabel(speechStats.wpm, lang);
               return (
                 <div className="video-review">
                   <div className="video-review-head">
-                    <span className="video-review-title">🎤 Speech analytics</span>
+                    <span className="video-review-title">{t.speechTitle}</span>
                   </div>
                   <div className="video-stats">
                     <div className="video-stat">
                       <div className={`video-stat-val ${pace.tone}`}>{speechStats.wpm || "—"}</div>
-                      <div className="video-stat-lbl">Words / min</div>
+                      <div className="video-stat-lbl">{t.wpmLabel}</div>
                       <div className="video-stat-sub">{pace.text}</div>
                     </div>
                     <div className="video-stat">
                       <div className={`video-stat-val ${speechStats.fillerTotal === 0 ? "great" : speechStats.fillerTotal < 6 ? "ok" : "low"}`}>
                         {speechStats.fillerTotal}
                       </div>
-                      <div className="video-stat-lbl">Filler words</div>
+                      <div className="video-stat-lbl">{t.fillerLabel}</div>
                       <div className="video-stat-sub">
-                        {speechStats.topFillers.length === 0 ? "Clean delivery" : speechStats.topFillers.map(([w, n]) => `"${w}" ×${n}`).join(", ")}
+                        {speechStats.topFillers.length === 0 ? t.cleanDelivery : speechStats.topFillers.map(([w, n]) => `"${w}" ×${n}`).join(", ")}
                       </div>
                     </div>
                     <div className="video-stat">
                       <div className="video-stat-val">{speechStats.wordCount}</div>
-                      <div className="video-stat-lbl">Total words</div>
+                      <div className="video-stat-lbl">{t.totalWordsLabel}</div>
                       <div className="video-stat-sub">in {Math.round(speechStats.totalSecs)}s</div>
                     </div>
                   </div>
@@ -1373,29 +1545,29 @@ DRILL RULES:
             {recordedUrl && (
               <div className="video-review">
                 <div className="video-review-head">
-                  <span className="video-review-title">📹 Video review</span>
+                  <span className="video-review-title">{t.videoTitle}</span>
                   <a
                     href={recordedUrl}
                     download={`interview-${new Date().toISOString().slice(0,10)}.${recordedMime?.includes("mp4") ? "mp4" : "webm"}`}
                     className="video-review-dl"
                   >
-                    ⬇ Download
+                    {t.downloadLabel}
                   </a>
                 </div>
                 <video src={recordedUrl} controls playsInline className="video-review-player" />
                 {faceMetrics && faceMetrics.samples > 5 && (() => {
-                  const pres = presenceLabel(faceMetrics.presence);
-                  const eye = eyeContactLabel(faceMetrics.eyeContact);
+                  const pres = presenceLabel(faceMetrics.presence, lang);
+                  const eye = eyeContactLabel(faceMetrics.eyeContact, lang);
                   return (
                     <div className="video-stats">
                       <div className="video-stat">
                         <div className={`video-stat-val ${pres.tone}`}>{Math.round(faceMetrics.presence * 100)}%</div>
-                        <div className="video-stat-lbl">In frame</div>
+                        <div className="video-stat-lbl">{t.inFrameLabel}</div>
                         <div className="video-stat-sub">{pres.text}</div>
                       </div>
                       <div className="video-stat">
                         <div className={`video-stat-val ${eye.tone}`}>{Math.round(faceMetrics.eyeContact * 100)}%</div>
-                        <div className="video-stat-lbl">Eye contact</div>
+                        <div className="video-stat-lbl">{t.eyeLabel}</div>
                         <div className="video-stat-sub">{eye.text}</div>
                       </div>
                     </div>
@@ -1405,9 +1577,9 @@ DRILL RULES:
             )}
 
             <button className="btn" onClick={startInterview} disabled={startLoading}>
-              {startLoading ? "Preparing..." : "Repeat interview →"}
+              {startLoading ? t.preparingDrill : t.repeatBtn}
             </button>
-            <button className="btn-ghost" onClick={restart}>Practice for another job</button>
+            <button className="btn-ghost" onClick={restart}>{t.anotherBtn}</button>
           </div>
         )}
 
@@ -1415,13 +1587,14 @@ DRILL RULES:
         {phase === "setup" && history.length > 0 && (
           <div className="hist-panel">
             <div className="hist-title">
-              Past interviews
-              <button className="hist-clear" onClick={clearHistory}>Clear</button>
+              {t.pastLabel}
+              <button className="hist-clear" onClick={clearHistory}>{t.clearLabel}</button>
             </div>
             <div className="hist-list">
               {history.map((h, i) => {
                 const sc = h.score >= 80 ? "great" : h.score >= 60 ? "ok" : "low";
-                const date = new Date(h.date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const locale = lang === "es" ? "es-MX" : "en-US";
+                const date = new Date(h.date).toLocaleDateString(locale, { month: "short", day: "numeric" });
                 return (
                   <div className="hist-item" key={i}>
                     <div className={`hist-score ${sc}`}>{h.score}</div>
