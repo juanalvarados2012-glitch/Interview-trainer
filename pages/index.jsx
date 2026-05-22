@@ -608,6 +608,8 @@ export default function Landing() {
           <Link href="/app" className="footer-link">{L.footerTryFree}</Link>
           <a href="#pricing" className="footer-link">{L.footerPricing}</a>
           <a href="#features" className="footer-link">{L.footerFeatures}</a>
+          <Link href="/privacy" className="footer-link">{lang === "es" ? "Privacidad" : "Privacy"}</Link>
+          <a href="mailto:juanalvarado2012@gmail.com" className="footer-link">Contact</a>
         </div>
         <span className="footer-copy">© {new Date().getFullYear()} InterviewHub</span>
       </footer>
