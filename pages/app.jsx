@@ -757,7 +757,7 @@ export default function App() {
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
 - Vary how you start each response — don't repeat the same opener.
 - When all ${nq} main questions are answered: close the interview naturally (thank them, mention next steps) then append exactly "|||END|||" at the very end.`;
-    return `${makePersona(diff, cmp, lng)}\n\n${lng === "es" ? "Descripción del puesto" : "Job description"} for ${role}: ${jd}\n\n${rules}`;
+    return `${makePersona(diff, cmp, lng)}\n\n${lng === "es" ? `Descripción del puesto para ${role}` : `Job description for ${role}`}: ${jd}\n\n${rules}${lng === "es" ? "\n\nIMPORTANTE: Esta entrevista es COMPLETAMENTE en español. Sin importar en qué idioma esté escrita la descripción del puesto, TODAS tus respuestas, preguntas y comentarios deben ser en español. Nunca uses inglés." : ""}`;
   }, [jobRole, company, jdText, numQ, difficulty, lang]);
 
   /* ── SCRAPE JOB URL ── */
