@@ -28,15 +28,19 @@ export default async function handler(req, res) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const userId = session.metadata?.userId;
+    const email = session.customer_details?.email || session.customer_email;
 
-    if (userId && userId !== "anonymous" && process.env.CLERK_SECRET_KEY) {
+    if (email && process.env.CLERK_SECRET_KEY) {
       try {
         const { createClerkClient } = await import("@clerk/nextjs/server");
         const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-        await clerk.users.updateUser(userId, {
-          publicMetadata: { paid: true },
-        });
+        const users = await clerk.users.getUserList({ emailAddress: [email] });
+        if (users.data?.length > 0) {
+          await clerk.users.updateUser(users.data[0].id, {
+            publicMetadata: { paid: true },
+          });
+        }
+        // If user doesn't exist yet, they'll get Pro when they sign up via /api/check-payment
       } catch (e) {
         console.error("Failed to update Clerk user:", e.message);
       }

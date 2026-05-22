@@ -3,11 +3,8 @@ const CLERK_ENABLED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 let middleware;
 
 if (CLERK_ENABLED) {
-  const { clerkMiddleware, createRouteMatcher } = require("@clerk/nextjs/server");
-  const isPublic = createRouteMatcher(["/", "/api/webhooks/(.*)"]);
-  middleware = clerkMiddleware((auth, req) => {
-    if (!isPublic(req)) auth.protect();
-  });
+  const { clerkMiddleware } = require("@clerk/nextjs/server");
+  middleware = clerkMiddleware();
 } else {
   middleware = () => undefined;
 }

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
+
+const CLERK_ENABLED = typeof process !== "undefined" && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 import { useHistory, computeInsights, WEAK_AREAS } from "../lib/useHistory";
 
 /* ── STYLES ─────────────────────────────────────────────────── */
@@ -642,6 +645,17 @@ export default function App() {
   const [lang, setLang] = useState("en");
   const t = STRINGS[lang];
   const { history, addEntry, clearHistory } = useHistory();
+  const { user, isLoaded: userLoaded } = CLERK_ENABLED ? useUser() : { user: null, isLoaded: true };
+  const isPaid = !!user?.publicMetadata?.paid;
+
+  // Auto-detect payment when user signs in
+  useEffect(() => {
+    if (!CLERK_ENABLED || !user || isPaid) return;
+    fetch("/api/check-payment", { method: "POST" })
+      .then(r => r.json())
+      .then(d => { if (d.paid) window.location.reload(); })
+      .catch(() => {});
+  }, [user?.id]);
 
   // Setup
   const [jobRole, setJobRole] = useState("");
@@ -1158,12 +1172,26 @@ DRILL RULES:
       <div className="shell">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <Link href="/" className="back-link" style={{ marginBottom: 0 }}>← InterviewHub</Link>
-          <button
-            onClick={() => setLang(l => l === "en" ? "es" : "en")}
-            style={{ fontFamily: "'Syne',sans-serif", fontSize: ".88rem", fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#2020a0,#4040cc)", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "all .2s", letterSpacing: ".01em" }}
-          >
-            {lang === "en" ? "🌐 Español" : "🌐 English"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={() => setLang(l => l === "en" ? "es" : "en")}
+              style={{ fontFamily: "'Syne',sans-serif", fontSize: ".88rem", fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#2020a0,#4040cc)", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "all .2s", letterSpacing: ".01em" }}
+            >
+              {lang === "en" ? "🌐 Español" : "🌐 English"}
+            </button>
+            {CLERK_ENABLED && (
+              user
+                ? <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {isPaid && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: ".68rem", color: "#6060cc", background: "#0d0d22", border: "1px solid #2a2a50", borderRadius: 6, padding: "3px 8px" }}>PRO</span>}
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                : <SignInButton mode="modal">
+                    <button style={{ fontFamily: "'Syne',sans-serif", fontSize: ".82rem", fontWeight: 700, color: "#fff", background: "#0d0d22", border: "1px solid #2a2a50", borderRadius: 10, padding: "10px 16px", cursor: "pointer" }}>
+                      {lang === "en" ? "Sign in" : "Iniciar sesión"}
+                    </button>
+                  </SignInButton>
+            )}
+          </div>
         </div>
         <div className="hd">
           <div className="hd-tag">{t.tag}</div>

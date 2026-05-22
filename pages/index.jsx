@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
+
+const CLERK_ENABLED = typeof process !== "undefined" && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
@@ -350,6 +353,7 @@ export default function Landing() {
   const [openFaq, setOpenFaq] = useState(null);
   const [lang, setLang] = useState("en");
   const L = LANDING_STRINGS[lang];
+  const { user } = CLERK_ENABLED ? useUser() : { user: null };
 
   const title = lang === "es"
     ? "InterviewHub — Practica entrevistas de trabajo con un entrevistador de IA real"
@@ -386,6 +390,13 @@ export default function Landing() {
             {L.langToggle}
           </button>
           <a href="#pricing" className="nav-link">{L.pricing}</a>
+          {CLERK_ENABLED && (
+            user
+              ? <UserButton afterSignOutUrl="/" />
+              : <SignInButton mode="modal">
+                  <button className="nav-cta">{lang === "en" ? "Sign in" : "Iniciar sesión"}</button>
+                </SignInButton>
+          )}
           <Link href="/app" className="nav-cta">{L.tryFree}</Link>
         </div>
       </nav>
