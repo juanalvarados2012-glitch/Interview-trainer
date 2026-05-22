@@ -171,7 +171,7 @@ const LANDING_STRINGS = {
     heroCta: "Start for free →",
     heroProCta: "Get Pro access",
     heroComingSoon: "Coming soon",
-    heroNote: <>Free plan includes voice, job URL analyzer, and coach tips.<br />No credit card needed.</>,
+    heroNote: <>Free plan includes voice, real-time coach tips, and Jordan (standard difficulty).<br />No credit card needed.</>,
     heroProof: ["✓ No sign-up required", "✓ Works on mobile", "✓ Any job posting"],
     demoLive: "Live interview · speaking...",
     demoQ: "Tell me about a time you led a project with a tight deadline and limited resources. What was your approach?",
@@ -180,7 +180,7 @@ const LANDING_STRINGS = {
     demoFollowup: "Interesting. What did you actually cut, and how did you decide what stayed in?",
     featTag: "// Features",
     featH2: <>{`Not a quiz app. A real`}<br /><span className="gradient-text">conversation</span></>,
-    featSub: "Back-and-forth with an interviewer who actually challenges you — features marked PRO are coming in the paid plan.",
+    featSub: "Back-and-forth with an interviewer who actually challenges you — features marked PRO require a paid plan.",
     features: [
       { icon: "🎙️", title: "Voice-enabled interviewer", desc: "Your AI interviewer speaks out loud using the best voice on your device, and listens to your answers — just like the real thing.", free: true },
       { icon: "🎯", title: "Job-specific questions", desc: "Paste any job posting URL — Greenhouse, Lever, Workday, company sites — and get questions tailored exactly to that role.", free: true },
@@ -215,7 +215,7 @@ const LANDING_STRINGS = {
     freeFeats: [
       { on: true,  text: "6 interviews per month" },
       { on: true,  text: "Voice-enabled AI interviewer (best voice on your device)" },
-      { on: true,  text: "Job URL analyzer" },
+      { on: false, text: "Job URL analyzer" },
       { on: true,  text: "Real-time coach tips" },
       { on: true,  text: "Standard difficulty (Jordan)" },
       { on: true,  text: "5 questions per interview" },
@@ -263,7 +263,7 @@ const LANDING_STRINGS = {
     heroCta: "Empieza gratis →",
     heroProCta: "Acceso Pro",
     heroComingSoon: "Próximamente",
-    heroNote: <>El plan gratuito incluye voz, análisis de vacantes y consejos de coach.<br />Sin tarjeta de crédito.</>,
+    heroNote: <>El plan gratuito incluye voz, consejos de coach en tiempo real y Jordan (dificultad estándar).<br />Sin tarjeta de crédito.</>,
     heroProof: ["✓ Sin registro", "✓ Funciona en móvil", "✓ Cualquier vacante"],
     demoLive: "Entrevista en vivo · hablando...",
     demoQ: "Cuéntame sobre una vez que lideraste un proyecto con tiempo limitado y pocos recursos. ¿Cuál fue tu enfoque?",
@@ -272,7 +272,7 @@ const LANDING_STRINGS = {
     demoFollowup: "Interesante. ¿Qué recortaste exactamente y cómo decidiste qué se quedaba?",
     featTag: "// Características",
     featH2: <>{`No es un quiz. Es una`}<br /><span className="gradient-text">conversación real</span></>,
-    featSub: "Ida y vuelta con un entrevistador que realmente te desafía — las funciones marcadas PRO estarán disponibles en el plan de pago.",
+    featSub: "Ida y vuelta con un entrevistador que realmente te desafía — las funciones marcadas PRO requieren un plan de pago.",
     features: [
       { icon: "🎙️", title: "Entrevistador con voz", desc: "Tu entrevistador de IA habla en voz alta usando la mejor voz de tu dispositivo, y escucha tus respuestas — igual que en la vida real.", free: true },
       { icon: "🎯", title: "Preguntas específicas al puesto", desc: "Pega cualquier URL de vacante — Greenhouse, Lever, Workday, portales de empresa — y obtén preguntas adaptadas exactamente a ese rol.", free: true },
@@ -307,7 +307,7 @@ const LANDING_STRINGS = {
     freeFeats: [
       { on: true,  text: "6 entrevistas por mes" },
       { on: true,  text: "Entrevistador de IA con voz (la mejor voz de tu dispositivo)" },
-      { on: true,  text: "Analizador de URL de vacantes" },
+      { on: false, text: "Analizador de URL de vacantes" },
       { on: true,  text: "Consejos del coach en tiempo real" },
       { on: true,  text: "Dificultad estándar (Jordan)" },
       { on: true,  text: "5 preguntas por entrevista" },

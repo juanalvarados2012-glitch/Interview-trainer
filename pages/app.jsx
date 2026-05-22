@@ -1237,14 +1237,25 @@ DRILL RULES:
                   <span className="coach-weak-lbl">{t.focusArea}</span>
                   <span className="coach-weak-val">{t.weakLabels[insights.topWeak] || WEAK_AREAS[insights.topWeak].label}</span>
                 </div>
-                <button
-                  className="btn"
-                  style={{ marginTop: 10 }}
-                  onClick={() => startDrill(insights.topWeak)}
-                  disabled={startLoading}
-                >
-                  {startLoading ? t.preparingDrill : t.quickDrill}
-                </button>
+                {isPaid ? (
+                  <button
+                    className="btn"
+                    style={{ marginTop: 10 }}
+                    onClick={() => startDrill(insights.topWeak)}
+                    disabled={startLoading}
+                  >
+                    {startLoading ? t.preparingDrill : t.quickDrill}
+                  </button>
+                ) : (
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "#0a0a1f", border: "1px solid #2a2a50", borderRadius: 10 }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#555" }}>
+                      🔒 {lang === "es" ? "Ejercicios de práctica — solo Pro" : "Quick drills — Pro only"}
+                    </div>
+                    <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".75rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                      {lang === "es" ? "Obtener Pro →" : "Get Pro →"}
+                    </a>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -1331,39 +1342,79 @@ DRILL RULES:
               <select value={numQ} onChange={e => setNumQ(e.target.value)}>
                 <option value="3">3 — {lang === "es" ? "Rápida" : "Quick"}</option>
                 <option value="5">5 — {lang === "es" ? "Estándar" : "Standard"}</option>
-                <option value="7">7 — {lang === "es" ? "Completa" : "Full"}</option>
-                <option value="10">10 — {lang === "es" ? "Intensiva" : "Intensive"}</option>
+                {isPaid ? (
+                  <option value="7">7 — {lang === "es" ? "Completa" : "Full"}</option>
+                ) : (
+                  <option value="7" disabled>7 — {lang === "es" ? "Completa [PRO]" : "Full [PRO]"}</option>
+                )}
+                {isPaid ? (
+                  <option value="10">10 — {lang === "es" ? "Intensiva" : "Intensive"}</option>
+                ) : (
+                  <option value="10" disabled>10 — {lang === "es" ? "Intensiva [PRO]" : "Intensive [PRO]"}</option>
+                )}
               </select>
             </div>
             <div className="field">
               <label>{t.diffLabel}</label>
               <div className="diff-row">
-                {t.diffOpts.map(({ key, label, sub }) => (
-                  <button
-                    key={key}
-                    className={`diff-pill ${key}${difficulty === key ? " active" : ""}`}
-                    onClick={() => setDifficulty(key)}
-                  >
-                    {DIFF_STATIC[key].emoji} {label}
-                    <div className="diff-sub">{sub}</div>
-                  </button>
-                ))}
+                {t.diffOpts.map(({ key, label, sub }) => {
+                  const isLocked = !isPaid && (key === "easy" || key === "hard");
+                  return (
+                    <button
+                      key={key}
+                      className={`diff-pill ${key}${difficulty === key ? " active" : ""}${isLocked ? " locked" : ""}`}
+                      style={isLocked ? { opacity: 0.55, position: "relative" } : {}}
+                      onClick={() => {
+                        if (isLocked) return;
+                        setDifficulty(key);
+                      }}
+                      title={isLocked ? (lang === "es" ? "Requiere Pro" : "Requires Pro") : undefined}
+                    >
+                      {isLocked ? "🔒" : DIFF_STATIC[key].emoji} {label}
+                      <div className="diff-sub">{isLocked ? (lang === "es" ? "Solo Pro" : "Pro only") : sub}</div>
+                    </button>
+                  );
+                })}
               </div>
+              {!isPaid && (difficulty === "easy" || difficulty === "hard") && (
+                <div style={{ marginTop: 8, padding: "10px 14px", background: "#0a0a1f", border: "1px solid #2a2a50", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#555" }}>
+                    {lang === "es" ? "🔒 Esta dificultad requiere Pro" : "🔒 This difficulty requires Pro"}
+                  </div>
+                  <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".75rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                    {lang === "es" ? "Obtener Pro →" : "Get Pro →"}
+                  </a>
+                </div>
+              )}
             </div>
 
-            <div
-              className={`record-toggle${recordEnabled ? " on" : ""}`}
-              onClick={() => setRecordEnabled(v => !v)}
-            >
-              <div className="record-toggle-icon">{recordEnabled ? "🔴" : "📹"}</div>
-              <div className="record-toggle-text">
-                <strong>{t.recordLabel}</strong>
-                <span>{t.recordDesc}</span>
+            {isPaid ? (
+              <div
+                className={`record-toggle${recordEnabled ? " on" : ""}`}
+                onClick={() => setRecordEnabled(v => !v)}
+              >
+                <div className="record-toggle-icon">{recordEnabled ? "🔴" : "📹"}</div>
+                <div className="record-toggle-text">
+                  <strong>{t.recordLabel}</strong>
+                  <span>{t.recordDesc}</span>
+                </div>
+                <div className={`record-toggle-switch${recordEnabled ? " on" : ""}`}>
+                  <div className="record-toggle-knob" />
+                </div>
               </div>
-              <div className={`record-toggle-switch${recordEnabled ? " on" : ""}`}>
-                <div className="record-toggle-knob" />
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", background: "#080812", border: "1px solid #1a1a30", borderRadius: 12, marginBottom: 18 }}>
+                <div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#4040a0", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 4 }}>🔒 PRO — {lang === "es" ? "Revisión de video" : "Video review"}</div>
+                  <div style={{ fontSize: ".78rem", color: "#555", fontFamily: "'DM Mono',monospace" }}>
+                    {lang === "es" ? "Grábate y analiza tu ritmo y muletillas" : "Record yourself and analyze pace & filler words"}
+                  </div>
+                </div>
+                <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".78rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                  {lang === "es" ? "Obtener Pro →" : "Get Pro →"}
+                </a>
               </div>
-            </div>
+            )}
             {cameraErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{cameraErr}</div>}
 
             <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
