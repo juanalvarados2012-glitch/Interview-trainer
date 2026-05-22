@@ -291,7 +291,7 @@ function voiceGender(v) {
 function pickBestVoice(voices, { lang = "en-US", preferGender = "any" } = {}) {
   let pool = voices.filter(v => v.lang === lang);
   if (pool.length === 0) pool = voices.filter(v => v.lang?.startsWith(lang.split("-")[0]));
-  if (pool.length === 0) pool = voices;
+  if (pool.length === 0) return null; // no matching language voice — let browser use utt.lang
   if (preferGender !== "any") {
     const matched = pool.filter(v => voiceGender(v) === preferGender);
     if (matched.length > 0) pool = matched;
@@ -717,6 +717,9 @@ export default function App() {
     const ttsLang = lang === "es" ? "es-MX" : "en-US";
     rawSpeak(text, { voice: chosen, preferGender: cfg.preferGender, rate: cfg.rate, lang: ttsLang });
   }, [rawSpeak, voices, selectedVoiceURI, difficulty, lang]);
+
+  // Reset selected voice when language changes so auto-pick finds the right language
+  useEffect(() => { setSelectedVoiceURI(null); }, [lang]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
