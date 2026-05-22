@@ -1160,7 +1160,7 @@ DRILL RULES:
           <Link href="/" className="back-link" style={{ marginBottom: 0 }}>← InterviewHub</Link>
           <button
             onClick={() => setLang(l => l === "en" ? "es" : "en")}
-            style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#6060cc", background: "#0d0d22", border: "1px solid #2a2a50", borderRadius: 8, padding: "5px 12px", cursor: "pointer", transition: "all .2s" }}
+            style={{ fontFamily: "'Syne',sans-serif", fontSize: ".88rem", fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#2020a0,#4040cc)", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "all .2s", letterSpacing: ".01em" }}
           >
             {lang === "en" ? "🌐 Español" : "🌐 English"}
           </button>
