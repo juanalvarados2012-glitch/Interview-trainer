@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 
 const CLERK_ENABLED = typeof process !== "undefined" && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const STRIPE_LINK = "https://buy.stripe.com/bJebJ37atckE4JudqC4Vy04";
 import { useHistory, computeInsights, WEAK_AREAS } from "../lib/useHistory";
 
 /* ── STYLES ─────────────────────────────────────────────────── */
@@ -1255,26 +1256,42 @@ DRILL RULES:
             <div className="card-title">{t.setupTitle}</div>
             <div className="card-desc">{t.setupDesc}</div>
 
-            <div className="url-bar">
-              <input
-                className="url-input"
-                value={jobUrl}
-                onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); setScrapeNote(""); }}
-                onKeyDown={e => e.key === "Enter" && scrapeJob()}
-                placeholder={t.urlPlaceholder}
-              />
-              <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
-                {scraping ? t.urlAnalyzing : t.urlBtn}
-              </button>
-            </div>
-            {scraping && (
-              <div className="loader" style={{ marginTop: -10, marginBottom: 10 }}>
-                <div className="dot" /><div className="dot" /><div className="dot" />
-                {t.readingJob}
+            {isPaid ? (
+              <>
+                <div className="url-bar">
+                  <input
+                    className="url-input"
+                    value={jobUrl}
+                    onChange={e => { setJobUrl(e.target.value); setScrapeErr(""); setScrapeNote(""); }}
+                    onKeyDown={e => e.key === "Enter" && scrapeJob()}
+                    placeholder={t.urlPlaceholder}
+                  />
+                  <button className="url-btn" onClick={scrapeJob} disabled={scraping || !jobUrl.trim()}>
+                    {scraping ? t.urlAnalyzing : t.urlBtn}
+                  </button>
+                </div>
+                {scraping && (
+                  <div className="loader" style={{ marginTop: -10, marginBottom: 10 }}>
+                    <div className="dot" /><div className="dot" /><div className="dot" />
+                    {t.readingJob}
+                  </div>
+                )}
+                {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
+                {scrapeNote && <div className="tip-box" style={{ marginTop: -10, marginBottom: 14 }}>💡 {scrapeNote}</div>}
+              </>
+            ) : (
+              <div style={{ background: "#0a0a18", border: "1px solid #1a1a30", borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#4040a0", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 4 }}>🔒 PRO</div>
+                  <div style={{ fontSize: ".82rem", color: "#555", fontFamily: "'DM Mono',monospace" }}>
+                    {lang === "es" ? "Análisis de vacantes con URL — solo para Pro" : "Job URL analyzer — Pro only"}
+                  </div>
+                </div>
+                <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".78rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                  {lang === "es" ? "Obtener Pro →" : "Get Pro →"}
+                </a>
               </div>
             )}
-            {scrapeErr && <div className="err-box" style={{ marginTop: -10, marginBottom: 14 }}>{scrapeErr}</div>}
-            {scrapeNote && <div className="tip-box" style={{ marginTop: -10, marginBottom: 14 }}>💡 {scrapeNote}</div>}
 
             <div className="url-divider">
               <div className="url-divider-line" />
