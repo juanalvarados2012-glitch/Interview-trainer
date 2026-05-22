@@ -207,7 +207,7 @@ const LANDING_STRINGS = {
     ],
     pricingTag: "// Pricing",
     pricingH2: <>{`Start free.`}<br /><span className="gradient-text">Upgrade when ready.</span></>,
-    pricingSub: "Start free. Pro is coming soon — drop your email to be notified first and get a launch discount.",
+    pricingSub: "Start free. Upgrade to Pro for $29 — one-time payment, lifetime access. No subscription, ever.",
     freeLabel: "Free", freePlanName: "Starter", freePrice: "$0", freePeriod: "forever · no card needed",
     freeFeats: [
       { on: true,  text: "6 interviews per month" },
@@ -222,7 +222,7 @@ const LANDING_STRINGS = {
       { on: false, text: "Unlimited interviews & full history" },
     ],
     freePlanBtn: "Start practicing free →",
-    proLabel: "Pro · Coming soon", proPlanName: "Unlimited", proPrice: "$29", proPeriod: "one-time · no subscription ever",
+    proLabel: "Pro", proPlanName: "Unlimited", proPrice: "$29", proPeriod: "one-time · no subscription ever",
     proFeats: [
       { text: "Everything in Free" },
       { text: "Unlimited interviews per month" },
@@ -232,10 +232,8 @@ const LANDING_STRINGS = {
       { text: "Video review: watch yourself back · WPM + filler counter" },
       { text: "Full interview history + streak tracking" },
     ],
-    proComingSoon: "Coming soon",
+    proCta: "Get Pro access →",
     proNote: "One-time payment · Instant access · No subscription",
-    notifyPlaceholder: "your@email.com", notifyBtn: "Notify me",
-    notifySentMsg: "You're on the list — we'll email you at launch!",
     faqTag: "// FAQ",
     faqH2: "Common questions",
     faqs: [
@@ -245,7 +243,7 @@ const LANDING_STRINGS = {
       { q: "What does \"Video review\" mean? Is my data safe?", a: "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers. You can play it back, see your WPM, filler words, and download it if you want to keep it." },
       { q: "What's the \"FAANG Stress Bootcamp\"?", a: "Hard mode with Morgan, our toughest interviewer persona — a relentless VP who pushes back on every answer and demands specific metrics. Built to prep you for Big Tech bar-raisers and high-stakes panels." },
       { q: "Will the questions match my actual job application?", a: "Yes. Paste the job posting URL (Greenhouse, Lever, Workday, company career pages all work great) and the AI extracts the exact requirements and skills to generate targeted questions." },
-      { q: "When is Pro launching?", a: "Soon — we're finishing payment integration. Drop your email in the notify field and you'll be first to know, with a launch discount." },
+      { q: "Is it safe to pay? What happens after I pay?", a: "Payment is processed securely by Stripe. After checkout you get instant lifetime access — just bookmark the app and use it anytime. No account needed." },
     ],
     ctaH2: "Ready to stop winging it?",
     ctaSub: <>Start free — no sign-up, no credit card.<br />Your AI interviewer is ready right now.</>,
@@ -301,7 +299,7 @@ const LANDING_STRINGS = {
     ],
     pricingTag: "// Precios",
     pricingH2: <>{`Empieza gratis.`}<br /><span className="gradient-text">Actualiza cuando quieras.</span></>,
-    pricingSub: "Empieza gratis. El plan Pro llega pronto — déjanos tu email para ser el primero en saberlo y obtener descuento de lanzamiento.",
+    pricingSub: "Empieza gratis. Actualiza a Pro por $29 — pago único, acceso de por vida. Sin suscripción nunca.",
     freeLabel: "Gratis", freePlanName: "Básico", freePrice: "$0", freePeriod: "para siempre · sin tarjeta",
     freeFeats: [
       { on: true,  text: "6 entrevistas por mes" },
@@ -316,7 +314,7 @@ const LANDING_STRINGS = {
       { on: false, text: "Entrevistas ilimitadas e historial completo" },
     ],
     freePlanBtn: "Empieza a practicar gratis →",
-    proLabel: "Pro · Próximamente", proPlanName: "Ilimitado", proPrice: "$29", proPeriod: "pago único · sin suscripción nunca",
+    proLabel: "Pro", proPlanName: "Ilimitado", proPrice: "$29", proPeriod: "pago único · sin suscripción nunca",
     proFeats: [
       { text: "Todo lo del plan Gratis" },
       { text: "Entrevistas ilimitadas por mes" },
@@ -326,10 +324,8 @@ const LANDING_STRINGS = {
       { text: "Revisión de video: mírarte de nuevo · contador de WPM + muletillas" },
       { text: "Historial completo de entrevistas + racha de práctica" },
     ],
-    proComingSoon: "Próximamente",
+    proCta: "Obtener acceso Pro →",
     proNote: "Pago único · Acceso inmediato · Sin suscripción",
-    notifyPlaceholder: "tu@email.com", notifyBtn: "Avísame",
-    notifySentMsg: "¡Estás en la lista — te avisaremos al lanzamiento!",
     faqTag: "// Preguntas frecuentes",
     faqH2: "Preguntas comunes",
     faqs: [
@@ -339,7 +335,7 @@ const LANDING_STRINGS = {
       { q: "¿Qué es la \"Revisión de video\"? ¿Están seguros mis datos?", a: "En Pro, puedes optar por grabarte durante la entrevista. El video se guarda solo en tu navegador — nunca se sube a nuestros servidores. Puedes reproducirlo, ver tu WPM, muletillas y descargarlo si quieres conservarlo." },
       { q: "¿Qué es el \"Big Tech Bootcamp\"?", a: "Modo difícil con Morgan, nuestro personaje más exigente — una VP implacable que cuestiona cada respuesta y exige métricas específicas. Creado para prepararte para entrevistas de alto nivel en Big Tech." },
       { q: "¿Las preguntas se adaptarán a mi vacante real?", a: "Sí. Pega la URL de la vacante (Greenhouse, Lever, Workday, portales de empresa funcionan muy bien) y la IA extrae los requisitos y habilidades exactos para generar preguntas focalizadas." },
-      { q: "¿Cuándo lanza el plan Pro?", a: "Pronto — estamos terminando la integración de pagos. Deja tu email en el campo de notificación y serás el primero en saberlo, con descuento de lanzamiento." },
+      { q: "¿Es seguro pagar? ¿Qué pasa después?", a: "El pago se procesa de forma segura con Stripe. Después del checkout tienes acceso de por vida instantáneo — solo guarda la app en favoritos y úsala cuando quieras. No se necesita cuenta." },
     ],
     ctaH2: "¿Listo para dejar de improvisar?",
     ctaSub: <>Empieza gratis — sin registro, sin tarjeta.<br />Tu entrevistador de IA está listo ahora mismo.</>,
@@ -348,18 +344,12 @@ const LANDING_STRINGS = {
   },
 };
 
+const STRIPE_LINK = "https://buy.stripe.com/bJebJ37atckE4JudqC4Vy04";
+
 export default function Landing() {
   const [openFaq, setOpenFaq] = useState(null);
-  const [notifyEmail, setNotifyEmail] = useState("");
-  const [notifySent, setNotifySent] = useState(false);
   const [lang, setLang] = useState("en");
   const L = LANDING_STRINGS[lang];
-
-  const handleNotify = (e) => {
-    e.preventDefault();
-    if (!notifyEmail.includes("@")) return;
-    setNotifySent(true);
-  };
 
   const title = lang === "es"
     ? "InterviewHub — Practica entrevistas de trabajo con un entrevistador de IA real"
@@ -412,10 +402,9 @@ export default function Landing() {
 
         <div className="hero-btns">
           <Link href="/app" className="btn-primary">{L.heroCta}</Link>
-          <div className="btn-coming">
-            {L.heroProCta}
-            <span className="coming-badge">{L.heroComingSoon}</span>
-          </div>
+          <a href={STRIPE_LINK} className="btn-primary" style={{background:"linear-gradient(135deg,#0a0a20,#1a1a50)",border:"1px solid #3030a0"}}>
+            {L.heroProCta} — $29
+          </a>
         </div>
 
         <div className="hero-free-note">{L.heroNote}</div>
@@ -566,21 +555,7 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-              <button className="plan-btn pro-btn" disabled>{L.proComingSoon}</button>
-              {notifySent ? (
-                <div className="notify-sent">{L.notifySentMsg}</div>
-              ) : (
-                <form className="notify-form" onSubmit={handleNotify}>
-                  <input
-                    className="notify-input"
-                    type="email"
-                    placeholder={L.notifyPlaceholder}
-                    value={notifyEmail}
-                    onChange={e => setNotifyEmail(e.target.value)}
-                  />
-                  <button type="submit" className="notify-send">{L.notifyBtn}</button>
-                </form>
-              )}
+              <a href={STRIPE_LINK} className="plan-btn pro-btn">{L.proCta}</a>
               <div className="plan-note">{L.proNote}</div>
             </div>
           </div>
