@@ -734,10 +734,14 @@ export default function App() {
     const diff = opts.difficulty ?? difficulty;
     const lng  = opts.lang ?? lang;
     const cfg  = DIFF_STATIC[diff];
+    const firstQ = lng === "es"
+      ? "Cuéntame sobre ti — tu trayectoria, experiencia más relevante y por qué te interesa este puesto."
+      : "Tell me about yourself — your background, most relevant experience, and why you're interested in this role.";
     const rules = lng === "es"
       ? `REGLAS DE LA ENTREVISTA (sigue estrictamente):
-- Al recibir [START]: preséntate como ${cfg.name}, ${cfg.title}, menciona el puesto y haz tu primera pregunta basada en la descripción.
-- Haz exactamente ${nq} preguntas principales, cada una específica a la descripción del puesto.
+- Al recibir [START]: preséntate como ${cfg.name}, ${cfg.title}, menciona el puesto y haz SIEMPRE esta primera pregunta exacta: "${firstQ}"
+- Después de la primera respuesta, haz ${parseInt(nq) - 1} preguntas adicionales específicas a la descripción del puesto.
+- Total: exactamente ${nq} preguntas principales.
 - Reacciona a las respuestas según tu estilo de personalidad.
 - Máximo 2 preguntas de seguimiento por pregunta principal antes de avanzar.
 - Mantén tus turnos CORTOS: 1-3 oraciones. Esto es una conversación.
@@ -745,8 +749,9 @@ export default function App() {
 - Cuando todas las ${nq} preguntas hayan sido respondidas: cierra la entrevista naturalmente y agrega exactamente "|||END|||" al final.
 - Toda la entrevista debe ser completamente en español.`
       : `INTERVIEW RULES (follow strictly):
-- When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ask your first question tailored to the job description.
-- Ask exactly ${nq} main questions, each specific to the actual job description above.
+- When you receive [START]: introduce yourself as ${cfg.name}, ${cfg.title}, mention the role, and ALWAYS ask this exact first question: "${firstQ}"
+- After the first answer, ask ${parseInt(nq) - 1} more questions specific to the job description.
+- Total: exactly ${nq} main questions.
 - React to answers according to your personality style above.
 - Max 2 follow-up questions per main question before moving on.
 - Keep your turns SHORT: 1-3 sentences. This is a conversation.
@@ -899,25 +904,39 @@ Be specific to what they actually said — don't give generic advice. No bullet 
       .map(m => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`)
       .join("\n\n");
 
+    const userAnswers = history.filter(m => m.role === "user" && m.content !== "[START]");
+    const substantialAnswers = userAnswers.filter(m => m.content.trim().split(/\s+/).length >= 10);
+    const totalQuestions = parseInt(numQ);
+    const answeredRatio = userAnswers.length === 0 ? 0 : substantialAnswers.length / totalQuestions;
+
+    const answerContext = userAnswers.length === 0
+      ? `\n⚠️ CRITICAL: The candidate answered 0 questions — they said nothing. Score MUST be 10–20.`
+      : substantialAnswers.length === 0
+      ? `\n⚠️ CRITICAL: The candidate gave only one-word or empty responses to all questions. Score MUST be 15–30.`
+      : answeredRatio < 0.4
+      ? `\n⚠️ NOTE: The candidate only gave substantial answers to ${substantialAnswers.length} out of ${totalQuestions} questions. Penalize heavily — score should be 25–45 unless the answered questions were exceptional.`
+      : "";
+
     const evalSystem =
-      `You are an experienced interview coach evaluating a completed job interview for the ${jobRole} role at ${company || "the company"}.
+      `You are an experienced interview coach evaluating a completed job interview for the ${jobRole} role at ${company || "the company"}.${answerContext}
 
 Read the full transcript carefully and score the candidate honestly and fairly using this rubric:
 
 SCORING RUBRIC:
-- 10–30: Refused to answer, completely off-topic, or mostly non-answers
-- 30–45: Very weak — almost no concrete examples, very vague throughout
-- 45–55: Below average — some relevant points but mostly surface-level, little depth
-- 55–65: Average — decent answers, shows relevant background, needs more specifics
-- 65–75: Good — clear answers, uses real examples, demonstrates relevant experience
-- 75–85: Very good — strong specific examples, structured thinking, addresses the role well
-- 85–95: Excellent — exceptional depth, metrics/results mentioned, highly tailored to the role
+- 10–25: Said nothing, refused to answer, or gave only 1-2 word responses
+- 25–40: Very weak — almost no concrete examples, mostly silent or off-topic
+- 40–52: Below average — some relevant points but mostly surface-level, little depth
+- 52–63: Average — decent answers, shows relevant background, needs more specifics
+- 63–73: Good — clear answers, uses real examples, demonstrates relevant experience
+- 73–83: Very good — strong specific examples, structured thinking, addresses the role well
+- 83–95: Excellent — exceptional depth, metrics/results mentioned, highly tailored to the role
 
 CALIBRATION NOTES:
+- If the candidate skipped questions or barely responded, their score cannot exceed 40.
 - Someone who gives relevant, reasonably specific answers (even if not using perfect STAR format) deserves 60–70.
-- Only give below 50 if the answers were genuinely poor or evasive.
-- Only give above 80 if the answers were genuinely impressive with real specifics.
+- Only give above 75 if the answers were genuinely impressive with real specifics and examples.
 - Judge the SUBSTANCE of what was said, not the format or eloquence.
+- Be honest — inflated scores help no one.
 
 Also pick 1-3 weakAreas from this exact list (the codes, not the labels):
 - behavioral_specifics (didn't give concrete real-life examples)
