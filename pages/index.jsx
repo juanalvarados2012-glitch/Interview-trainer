@@ -16,8 +16,8 @@ const css = `
   .nav-link:hover{color:#9090ff;background:#0d0d20}
   .nav-cta{padding:9px 20px;border-radius:9px;background:linear-gradient(135deg,#2020a0,#4040cc);color:#fff;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;text-decoration:none;transition:opacity .2s;border:none;cursor:pointer}
   .nav-cta:hover{opacity:.85}
-  .nav-lang{padding:8px 14px;border-radius:9px;background:#0d0d22;border:1px solid #2a2a50;color:#8080cc;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
-  .nav-lang:hover{background:#12122a;color:#aaaaff}
+  .nav-lang{padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,#1a1a60,#3030a0);border:1px solid #4040cc;color:#fff;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:0 2px 12px #3030a030}
+  .nav-lang:hover{opacity:.85;transform:translateY(-1px)}
 
   /* ── HERO ── */
   .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 80px;text-align:center;position:relative;overflow:hidden}
