@@ -16,9 +16,9 @@ const css = `
   .hd{margin-bottom:32px}
   .hd-tag{font-family:'DM Mono',monospace;font-size:.72rem;color:#4040a0;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
   .hd-title{font-size:2rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;background:linear-gradient(135deg,#eeeeff,#6060cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .hd-sub{font-size:.82rem;color:#bbb;margin-top:6px;font-family:'DM Mono',monospace}
+  .hd-sub{font-size:.82rem;color:#ddd;margin-top:6px;font-family:'DM Mono',monospace}
   .steps{display:flex;margin-bottom:28px;background:#0d0d1a;border:1px solid #1a1a30;border-radius:14px;overflow:hidden}
-  .step-btn{flex:1;padding:14px 8px;border:none;background:transparent;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border-right:1px solid #1a1a30;transition:all .2s}
+  .step-btn{flex:1;padding:14px 8px;border:none;background:transparent;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;color:#bbb;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border-right:1px solid #1a1a30;transition:all .2s}
   .step-btn:last-child{border-right:none}
   .step-btn.done{color:#4ecc96}
   .step-btn.active{background:#12122a;color:#fff}
@@ -28,8 +28,8 @@ const css = `
   .card{background:#0d0d1a;border:1px solid #1a1a30;border-radius:20px;padding:28px;animation:fadeUp .3s ease}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   .card-title{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
-  .card-desc{font-size:.78rem;color:#bbb;font-family:'DM Mono',monospace;margin-bottom:20px;line-height:1.5}
-  label{display:block;font-size:.72rem;font-weight:700;color:#aaa;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  .card-desc{font-size:.78rem;color:#ddd;font-family:'DM Mono',monospace;margin-bottom:20px;line-height:1.5}
+  label{display:block;font-size:.72rem;font-weight:700;color:#ddd;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
   textarea,input,select{width:100%;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.85rem;resize:vertical;outline:none;transition:border-color .2s}
   textarea:focus,input:focus,select:focus{border-color:#3030a0}
   select option{background:#0d0d1a}
@@ -39,9 +39,9 @@ const css = `
   .btn{width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#2020a0,#4040cc);color:#fff;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.01em}
   .btn:hover:not(:disabled){opacity:.85;transform:translateY(-1px)}
   .btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
-  .btn-ghost{width:100%;padding:11px;border-radius:10px;border:1px solid #1a1a30;background:transparent;color:#aaa;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px}
-  .btn-ghost:hover{border-color:#3030a0;color:#aaa}
-  .loader{display:flex;gap:6px;align-items:center;padding:14px 0;color:#aaa;font-family:'DM Mono',monospace;font-size:.78rem}
+  .btn-ghost{width:100%;padding:11px;border-radius:10px;border:1px solid #1a1a30;background:transparent;color:#ddd;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px}
+  .btn-ghost:hover{border-color:#3030a0;color:#ddd}
+  .loader{display:flex;gap:6px;align-items:center;padding:14px 0;color:#ddd;font-family:'DM Mono',monospace;font-size:.78rem}
   .dot{width:6px;height:6px;background:#4040c0;border-radius:50%;animation:bounce 1.2s infinite}
   .dot:nth-child(2){animation-delay:.2s}
   .dot:nth-child(3){animation-delay:.4s}
@@ -50,21 +50,21 @@ const css = `
   .job-icon{font-size:1.6rem;line-height:1}
   .job-company{font-size:.7rem;font-family:'DM Mono',monospace;color:#4040a0;text-transform:uppercase;letter-spacing:.08em}
   .job-role{font-size:.95rem;font-weight:700}
-  .badge{display:inline-flex;background:#0d0d22;border:1px solid #1a1a35;border-radius:8px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:.72rem;color:#bbb;cursor:pointer;margin:3px;transition:all .2s}
+  .badge{display:inline-flex;background:#0d0d22;border:1px solid #1a1a35;border-radius:8px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:.72rem;color:#ddd;cursor:pointer;margin:3px;transition:all .2s}
   .badge:hover{background:#12122a;color:#9090ff}
   .summary-bar{display:flex;align-items:center;gap:12px;background:#080812;border:1px solid #1a1a30;border-radius:12px;padding:14px 18px;margin-bottom:20px}
   .summary-ring{width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800}
   .summary-ring.great{background:#0a2a1a;color:#4ecc96;border:2px solid #4ecc9640}
   .summary-ring.ok{background:#2a2000;color:#f0c060;border:2px solid #f0c06040}
   .summary-ring.low{background:#2a0a0a;color:#f06060;border:2px solid #f0606040}
-  .summary-label{font-size:.72rem;font-family:'DM Mono',monospace;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+  .summary-label{font-size:.72rem;font-family:'DM Mono',monospace;color:#ddd;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
   .summary-val{font-size:1rem;font-weight:700}
   .fb{background:#080812;border:1px solid #1a1a30;border-radius:12px;overflow:hidden;margin-bottom:12px}
-  .fb-head{padding:10px 14px;background:#0d0d20;font-size:.72rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em}
-  .fb-body{padding:14px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.6;color:#888}
+  .fb-head{padding:10px 14px;background:#0d0d20;font-size:.72rem;font-weight:700;color:#ddd;text-transform:uppercase;letter-spacing:.06em}
+  .fb-body{padding:14px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.6;color:#ccc}
   .li{display:flex;gap:8px;margin-bottom:6px;font-family:'DM Mono',monospace;font-size:.8rem;line-height:1.5}
   .li-dot{flex-shrink:0;margin-top:2px}
-  .tip-box{background:#080812;border:1px solid #1a1a30;border-left:3px solid #3030a0;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#bbb;margin-bottom:16px;line-height:1.5}
+  .tip-box{background:#080812;border:1px solid #1a1a30;border-left:3px solid #3030a0;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#ddd;margin-bottom:16px;line-height:1.5}
   .err-box{background:#1a0808;border:1px solid #3a1010;border-radius:10px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#cc6060;margin-top:12px;line-height:1.5}
   .url-bar{display:flex;gap:8px;margin-bottom:20px}
   .url-input{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:10px;padding:10px 12px;color:#eeeeff;font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
@@ -74,7 +74,7 @@ const css = `
   .url-btn:disabled{opacity:.4;cursor:not-allowed}
   .url-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px}
   .url-divider-line{flex:1;height:1px;background:#1a1a30}
-  .url-divider-text{font-family:'DM Mono',monospace;font-size:.68rem;color:#888;text-transform:uppercase;letter-spacing:.08em}
+  .url-divider-text{font-family:'DM Mono',monospace;font-size:.68rem;color:#ccc;text-transform:uppercase;letter-spacing:.08em}
   .diff-row{display:flex;gap:8px;margin-bottom:20px}
   .diff-pill{flex:1;padding:12px 8px;border-radius:12px;border:1px solid #1a1a30;background:transparent;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
   .diff-pill:hover:not(.active){border-color:#2a2a50}
@@ -101,16 +101,16 @@ const css = `
   @keyframes ivSpeak{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.06);opacity:1}}
   .iv-info{flex:1}
   .iv-name{font-size:1rem;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
-  .iv-title{font-size:.72rem;color:#aaa;font-family:'DM Mono',monospace}
+  .iv-title{font-size:.72rem;color:#ddd;font-family:'DM Mono',monospace}
   .iv-status{display:flex;align-items:center;gap:6px;margin-top:6px}
   .iv-dot{width:6px;height:6px;border-radius:50%;background:#4ecc96;animation:ivPulse 2s infinite}
   @keyframes ivPulse{0%,100%{opacity:1}50%{opacity:.3}}
   .iv-live{font-family:'DM Mono',monospace;font-size:.65rem;color:#4ecc96;text-transform:uppercase;letter-spacing:.08em}
-  .iv-typing{font-family:'DM Mono',monospace;font-size:.65rem;color:#aaa;margin-left:4px}
+  .iv-typing{font-family:'DM Mono',monospace;font-size:.65rem;color:#ddd;margin-left:4px}
   /* ── VOICE PICKER ── */
   .voice-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#080812;border:1px solid #1a1a30;border-radius:12px;margin-bottom:14px}
-  .voice-label{font-family:'DM Mono',monospace;font-size:.7rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
-  .voice-select{flex:1;background:transparent;border:none;color:#aaa;font-family:'DM Mono',monospace;font-size:.78rem;padding:6px 8px;border-radius:6px;outline:none;cursor:pointer}
+  .voice-label{font-family:'DM Mono',monospace;font-size:.7rem;color:#ddd;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0}
+  .voice-select{flex:1;background:transparent;border:none;color:#ddd;font-family:'DM Mono',monospace;font-size:.78rem;padding:6px 8px;border-radius:6px;outline:none;cursor:pointer}
   .voice-select:hover{background:#0d0d20;color:#eeeeff}
   .voice-select option{background:#0d0d1a}
   .voice-preview{background:#12122a;border:1px solid #2a2a50;color:#8080cc;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.78rem;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
@@ -125,7 +125,7 @@ const css = `
   .msg-ai{flex-direction:row}
   .msg-user{flex-direction:row-reverse}
   .bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-family:'DM Mono',monospace;font-size:.82rem;line-height:1.55}
-  .bubble-ai{background:#0d0d20;border:1px solid #1a1a35;border-top-left-radius:4px;color:#ccc}
+  .bubble-ai{background:#0d0d20;border:1px solid #1a1a35;border-top-left-radius:4px;color:#eee}
   .bubble-user{background:#20208a;border:1px solid #3030b0;border-top-right-radius:4px;color:#eeeeff}
   .cursor{display:inline-block;width:2px;height:14px;background:#6060cc;margin-left:2px;animation:blink .7s infinite;vertical-align:middle}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
@@ -149,7 +149,7 @@ const css = `
   .record-toggle:hover{border-color:#3030a0}
   .record-toggle.on{border-color:#c060ff60;background:#0a0518}
   .record-toggle-icon{font-size:1.4rem;flex-shrink:0}
-  .record-toggle-text{flex:1;font-family:'DM Mono',monospace;font-size:.72rem;color:#bbb;line-height:1.4}
+  .record-toggle-text{flex:1;font-family:'DM Mono',monospace;font-size:.72rem;color:#ddd;line-height:1.4}
   .record-toggle-text strong{display:block;color:#eeeeff;margin-bottom:2px;font-size:.8rem}
   .record-toggle-switch{width:36px;height:20px;background:#1a1a30;border-radius:20px;position:relative;flex-shrink:0;transition:background .2s}
   .record-toggle-switch.on{background:#c060ff}
@@ -172,8 +172,8 @@ const css = `
   .video-stat-val.great{background:linear-gradient(135deg,#4ecc96,#2a9a70);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
   .video-stat-val.ok{background:linear-gradient(135deg,#f0c060,#cc9030);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
   .video-stat-val.low{background:linear-gradient(135deg,#f06060,#cc3030);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .video-stat-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
-  .video-stat-sub{font-family:'DM Mono',monospace;font-size:.6rem;color:#bbb;margin-top:3px;line-height:1.3}
+  .video-stat-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:#ddd;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+  .video-stat-sub{font-family:'DM Mono',monospace;font-size:.6rem;color:#ddd;margin-top:3px;line-height:1.3}
   /* ── COACH CARD ── */
   .coach-card{background:linear-gradient(135deg,#0d0d1f,#0a1a18);border:1px solid #1a2a30;border-radius:18px;padding:20px;margin-bottom:18px;animation:fadeUp .3s ease}
   .coach-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -182,14 +182,14 @@ const css = `
   .coach-stats{display:flex;gap:14px;margin-bottom:14px}
   .coach-stat{flex:1;background:#080812;border:1px solid #1a1a30;border-radius:12px;padding:12px 14px;text-align:center}
   .coach-stat-val{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#eeeeff,#6060cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .coach-stat-lbl{font-family:'DM Mono',monospace;font-size:.65rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-  .coach-weak{background:#080812;border:1px solid #1a1a30;border-left:3px solid #4ecc96;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#888;line-height:1.5}
-  .coach-weak-lbl{color:#aaa;text-transform:uppercase;font-size:.65rem;letter-spacing:.06em;margin-right:8px}
+  .coach-stat-lbl{font-family:'DM Mono',monospace;font-size:.65rem;color:#ddd;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  .coach-weak{background:#080812;border:1px solid #1a1a30;border-left:3px solid #4ecc96;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:.78rem;color:#ccc;line-height:1.5}
+  .coach-weak-lbl{color:#ddd;text-transform:uppercase;font-size:.65rem;letter-spacing:.06em;margin-right:8px}
   .coach-weak-val{color:#eeeeff;font-weight:600}
   /* ── HISTORY ── */
   .hist-panel{margin-top:32px}
-  .hist-title{font-family:'DM Mono',monospace;font-size:.68rem;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-  .hist-clear{background:none;border:none;color:#888;font-family:'DM Mono',monospace;font-size:.65rem;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .2s}
+  .hist-title{font-family:'DM Mono',monospace;font-size:.68rem;color:#ddd;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .hist-clear{background:none;border:none;color:#bbb;font-family:'DM Mono',monospace;font-size:.65rem;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .2s}
   .hist-clear:hover{color:#cc6060}
   .hist-list{display:flex;flex-direction:column;gap:8px}
   .hist-item{background:#0a0a18;border:1px solid #151525;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px}
@@ -199,9 +199,9 @@ const css = `
   .hist-score.low{background:#2a0a0a;color:#f06060;border:1.5px solid #f0606040}
   .hist-info{flex:1;min-width:0}
   .hist-role{font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .hist-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:#aaa;margin-top:2px}
+  .hist-meta{font-family:'DM Mono',monospace;font-size:.68rem;color:#ddd;margin-top:2px}
   /* ── BACK LINK ── */
-  .back-link{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#aaa;text-decoration:none;margin-bottom:24px;transition:color .2s}
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#ddd;text-decoration:none;margin-bottom:24px;transition:color .2s}
   .back-link:hover{color:#6060cc}
 `;
 
@@ -1267,7 +1267,7 @@ DRILL RULES:
                   </button>
                 ) : (
                   <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "#0a0a1f", border: "1px solid #2a2a50", borderRadius: 10 }}>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#555" }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#ccc" }}>
                       🔒 {lang === "es" ? "Ejercicios de práctica — solo Pro" : "Quick drills — Pro only"}
                     </div>
                     <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".75rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
@@ -1313,7 +1313,7 @@ DRILL RULES:
               <div style={{ background: "#0a0a18", border: "1px solid #1a1a30", borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#4040a0", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 4 }}>🔒 PRO</div>
-                  <div style={{ fontSize: ".82rem", color: "#555", fontFamily: "'DM Mono',monospace" }}>
+                  <div style={{ fontSize: ".82rem", color: "#ccc", fontFamily: "'DM Mono',monospace" }}>
                     {lang === "es" ? "Análisis de vacantes con URL — solo para Pro" : "Job URL analyzer — Pro only"}
                   </div>
                 </div>
@@ -1349,7 +1349,7 @@ DRILL RULES:
               />
             </div>
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: ".7rem", color: "#444", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>{t.quickExamples}</div>
+              <div style={{ fontSize: ".7rem", color: "#ccc", fontFamily: "'DM Mono',monospace", marginBottom: 8 }}>{t.quickExamples}</div>
               {EXAMPLES[lang].map(ex => (
                 <span key={ex.role} className="badge" onClick={() => { setJobRole(ex.role); setCompany(ex.company); setJdText(ex.jd); }}>
                   {ex.role}
@@ -1397,7 +1397,7 @@ DRILL RULES:
               </div>
               {!isPaid && (difficulty === "easy" || difficulty === "hard") && (
                 <div style={{ marginTop: 8, padding: "10px 14px", background: "#0a0a1f", border: "1px solid #2a2a50", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#555" }}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".75rem", color: "#ccc" }}>
                     {lang === "es" ? "🔒 Esta dificultad requiere Pro" : "🔒 This difficulty requires Pro"}
                   </div>
                   <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".75rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
@@ -1425,7 +1425,7 @@ DRILL RULES:
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", background: "#080812", border: "1px solid #1a1a30", borderRadius: 12, marginBottom: 18 }}>
                 <div>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".72rem", color: "#4040a0", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 4 }}>🔒 PRO — {lang === "es" ? "Revisión de video" : "Video review"}</div>
-                  <div style={{ fontSize: ".78rem", color: "#555", fontFamily: "'DM Mono',monospace" }}>
+                  <div style={{ fontSize: ".78rem", color: "#ccc", fontFamily: "'DM Mono',monospace" }}>
                     {lang === "es" ? "Grábate y analiza tu ritmo y muletillas" : "Record yourself and analyze pace & filler words"}
                   </div>
                 </div>
