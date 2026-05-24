@@ -240,7 +240,7 @@ const LANDING_STRINGS = {
     faqTag: "// FAQ",
     faqH2: "Common questions",
     faqs: [
-      { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, job URL analyzer, and real-time coach tips. Pro unlocks unlimited interviews, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." },
+      { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, and real-time coach tips. Pro unlocks unlimited interviews, the job URL analyzer, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." },
       { q: "Is there a monthly subscription?", a: "No — Pro is a one-time $29 payment for lifetime access. Most candidates only need to prepare for a few weeks, so subscriptions feel like a rip-off." },
       { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." },
       { q: "What does \"Video review\" mean? Is my data safe?", a: "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers. You can play it back, see your WPM, filler words, and download it if you want to keep it." },
@@ -332,7 +332,7 @@ const LANDING_STRINGS = {
     faqTag: "// Preguntas frecuentes",
     faqH2: "Preguntas comunes",
     faqs: [
-      { q: "¿Cuál es la diferencia entre Gratis y Pro?", a: "Gratis te da 6 entrevistas/mes con Jordan en dificultad Estándar, voz, analizador de URL y consejos del coach en tiempo real. Pro desbloquea entrevistas ilimitadas, los personajes Sam (fácil) y Morgan (Big Tech Bootcamp), memoria del coach con ejercicios focalizados, revisión de video con análisis de ritmo y muletillas, e historial completo." },
+      { q: "¿Cuál es la diferencia entre Gratis y Pro?", a: "Gratis te da 6 entrevistas/mes con Jordan en dificultad Estándar, voz y consejos del coach en tiempo real. Pro desbloquea entrevistas ilimitadas, el analizador de URL de vacantes, los personajes Sam (fácil) y Morgan (Big Tech Bootcamp), memoria del coach con ejercicios focalizados, revisión de video con análisis de ritmo y muletillas, e historial completo." },
       { q: "¿Hay suscripción mensual?", a: "No — Pro es un pago único de $29 para acceso de por vida. La mayoría de los candidatos solo necesitan prepararse unas semanas, así que las suscripciones se sienten como una estafa." },
       { q: "¿Necesito micrófono?", a: "No — puedes escribir tus respuestas si lo prefieres. Pero usar el micrófono da la experiencia más realista, con el entrevistador de IA respondiéndote en voz alta." },
       { q: "¿Qué es la \"Revisión de video\"? ¿Están seguros mis datos?", a: "En Pro, puedes optar por grabarte durante la entrevista. El video se guarda solo en tu navegador — nunca se sube a nuestros servidores. Puedes reproducirlo, ver tu WPM, muletillas y descargarlo si quieres conservarlo." },

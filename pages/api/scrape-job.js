@@ -1,7 +1,22 @@
+import { getIsPaid } from "../../lib/serverAuth";
+import { rateLimit, getClientIp } from "../../lib/rateLimit";
+
 export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
+
+  // Rate limit: 10 requests/min per IP
+  const { limited } = rateLimit(getClientIp(req), { limit: 10, windowMs: 60000 });
+  if (limited) {
+    return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+  }
+
+  // Pro-only feature
+  const paid = await getIsPaid(req);
+  if (!paid) {
+    return res.status(403).json({ error: "pro_required" });
+  }
 
   const { url } = req.body || {};
   if (!url) return res.status(400).json({ error: "URL required" });

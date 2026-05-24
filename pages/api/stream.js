@@ -1,26 +1,21 @@
-import { getAuth, createClerkClient } from "@clerk/nextjs/server";
+import { getIsPaid } from "../../lib/serverAuth";
+import { rateLimit, getClientIp } from "../../lib/rateLimit";
 
 export const config = { api: { responseLimit: false } };
 
-const CLERK_ENABLED = !!process.env.CLERK_SECRET_KEY;
 const PRO_DIFFICULTIES = new Set(["easy", "hard"]);
 const FREE_MAX_QUESTIONS = 5;
 
-async function getIsPaid(req) {
-  if (!CLERK_ENABLED) return true;
-  try {
-    const { userId } = getAuth(req);
-    if (!userId) return false;
-    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-    const user = await clerk.users.getUser(userId);
-    return user.publicMetadata?.paid === true;
-  } catch {
-    return false;
-  }
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
+
+  // Rate limit: 20 requests/min per IP
+  const { limited } = rateLimit(getClientIp(req), { limit: 20, windowMs: 60000 });
+  if (limited) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.write(`data: ${JSON.stringify({ error: "Too many requests. Please wait a moment." })}\n\n`);
+    return res.end();
+  }
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
@@ -31,7 +26,7 @@ export default async function handler(req, res) {
 
   const { system, messages, max_tokens, difficulty, numQ } = req.body;
 
-  // Server-side Pro gating — check before setting streaming headers so we can return JSON 403
+  // Server-side Pro gating — before streaming headers so we can return JSON 403
   const requiresPro =
     PRO_DIFFICULTIES.has(difficulty) ||
     (numQ !== undefined && parseInt(numQ, 10) > FREE_MAX_QUESTIONS);
