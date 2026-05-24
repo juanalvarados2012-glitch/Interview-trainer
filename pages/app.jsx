@@ -5,7 +5,7 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 
 const CLERK_ENABLED = typeof process !== "undefined" && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const STRIPE_LINK = "https://buy.stripe.com/bJebJ37atckE4JudqC4Vy04";
-import { useHistory, computeInsights, WEAK_AREAS } from "../lib/useHistory";
+import { useHistory, computeInsights, WEAK_AREAS, getMonthlyInterviewCount, incrementMonthlyInterviewCount } from "../lib/useHistory";
 
 /* ── STYLES ─────────────────────────────────────────────────── */
 const css = `
@@ -206,13 +206,16 @@ const css = `
 `;
 
 /* ── API ─────────────────────────────────────────────────────── */
-async function callAIStream(system, messages, maxTokens = 400, onChunk) {
+async function callAIStream(system, messages, maxTokens = 400, onChunk, { difficulty, numQ } = {}) {
   const res = await fetch("/api/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens, difficulty, numQ }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 403) throw new Error("pro_required");
+    throw new Error(`HTTP ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -666,7 +669,14 @@ export default function App() {
   const [difficulty, setDifficulty] = useState("medium");
   const [startLoading, setStartLoading] = useState(false);
   const [startErr, setStartErr] = useState("");
+  const [freeLimitHit, setFreeLimitHit] = useState(false);
   const [jobUrl, setJobUrl] = useState("");
+
+  // Check free tier monthly limit on mount
+  useEffect(() => {
+    if (!CLERK_ENABLED || isPaid) return;
+    setFreeLimitHit(getMonthlyInterviewCount() >= 6);
+  }, [isPaid]);
   const [scraping, setScraping] = useState(false);
   const [scrapeErr, setScrapeErr] = useState("");
 
@@ -787,6 +797,16 @@ export default function App() {
 
   /* ── START INTERVIEW ── */
   const startInterview = async (opts = {}) => {
+    // Free tier monthly limit check
+    if (CLERK_ENABLED && !isPaid) {
+      const count = getMonthlyInterviewCount();
+      if (count >= 6) {
+        setFreeLimitHit(true);
+        return;
+      }
+      incrementMonthlyInterviewCount();
+    }
+
     unlock();
     if (opts.role    !== undefined) setJobRole(opts.role);
     if (opts.company !== undefined) setCompany(opts.company);
@@ -797,10 +817,12 @@ export default function App() {
     if (recordEnabled && !recordingActive) await startRecording();
     const trigger = [{ role: "user", content: "[START]" }];
     setDisplayMessages([{ role: "assistant", content: "", streaming: true }]);
+    const activeDifficulty = opts.difficulty ?? difficulty;
+    const activeNumQ = opts.numQ ?? numQ;
     try {
       const text = await callAIStream(buildSystem(opts), trigger, 400, (partial) => {
         setDisplayMessages([{ role: "assistant", content: partial, streaming: true }]);
-      });
+      }, { difficulty: activeDifficulty, numQ: activeNumQ });
       setApiMessages([...trigger, { role: "assistant", content: text }]);
       setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
       setPhase("interview");
@@ -808,7 +830,13 @@ export default function App() {
       speak(text);
     } catch (e) {
       setDisplayMessages([]);
-      setStartErr("Error starting interview: " + e.message);
+      if (e.message === "pro_required") {
+        setStartErr(lang === "es"
+          ? "Esta función requiere Pro. Obtén acceso ilimitado por $29."
+          : "This feature requires Pro. Get unlimited access for $29.");
+      } else {
+        setStartErr("Error starting interview: " + e.message);
+      }
     }
     setStartLoading(false);
   };
@@ -863,7 +891,7 @@ Be specific to what they actually said — don't give generic advice. No bullet 
           updated[updated.length - 1] = { role: "assistant", content: partial, streaming: true };
           return updated;
         });
-      }),
+      }, { difficulty, numQ }),
       fetchTip(lastQuestion, trimmed, userMsgIndex),
     ]);
 
@@ -1029,7 +1057,7 @@ DRILL RULES:
     try {
       const text = await callAIStream(drillSystem, trigger, 400, (partial) => {
         setDisplayMessages([{ role: "assistant", content: partial, streaming: true }]);
-      });
+      }, { difficulty: "medium", numQ: "3" });
       setApiMessages([...trigger, { role: "assistant", content: text }]);
       setDisplayMessages([{ role: "assistant", content: text, streaming: false }]);
       setPhase("interview");
@@ -1436,9 +1464,20 @@ DRILL RULES:
             )}
             {cameraErr && <div className="err-box" style={{ marginTop: -8, marginBottom: 14 }}>{cameraErr}</div>}
 
-            <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
-              {startLoading ? t.preparingBtn : t.startBtn}
-            </button>
+            {freeLimitHit ? (
+              <div style={{ background: "#0a0a1f", border: "1px solid #2a2a50", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: ".78rem", color: "#ccc", lineHeight: 1.5 }}>
+                  🔒 {lang === "es" ? "Usaste tus 6 entrevistas gratuitas de este mes. ¡Vuelve el próximo mes o hazte Pro!" : "You've used your 6 free interviews this month. Come back next month or go Pro!"}
+                </div>
+                <a href={STRIPE_LINK} style={{ flexShrink: 0, padding: "9px 14px", borderRadius: 8, background: "linear-gradient(135deg,#2020a0,#4040cc)", color: "#fff", fontFamily: "'Syne',sans-serif", fontSize: ".78rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                  {lang === "es" ? "Obtener Pro →" : "Get Pro →"}
+                </a>
+              </div>
+            ) : (
+              <button className="btn" onClick={startInterview} disabled={startLoading || !jobRole.trim() || !jdText.trim()}>
+                {startLoading ? t.preparingBtn : t.startBtn}
+              </button>
+            )}
             {startLoading && (
               <div className="loader">
                 <div className="dot" /><div className="dot" /><div className="dot" />
