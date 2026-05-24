@@ -355,6 +355,9 @@ export default function Landing() {
   const L = LANDING_STRINGS[lang];
   const { user } = CLERK_ENABLED ? useUser() : { user: null };
 
+  const siteUrl =
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_URL) || "";
+
   const title = lang === "es"
     ? "InterviewHub — Practica entrevistas de trabajo con un entrevistador de IA real"
     : "InterviewHub — Practice job interviews with a real AI interviewer";
@@ -376,6 +379,39 @@ export default function Landing() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        {siteUrl && <link rel="canonical" href={siteUrl} />}
+        {siteUrl && <meta property="og:url" content={siteUrl} />}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "InterviewHub",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web Browser",
+            "description": "AI-powered mock interview practice with voice, real-time coaching, and job-specific questions tailored to any job posting. Free to start, $29 lifetime Pro.",
+            "offers": [
+              { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free — 6 interviews/month" },
+              { "@type": "Offer", "price": "29", "priceCurrency": "USD", "name": "Pro — lifetime access" },
+            ],
+          }) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              { "@type": "Question", "name": "What's the difference between Free and Pro?", "acceptedAnswer": { "@type": "Answer", "text": "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, and real-time coach tips. Pro unlocks unlimited interviews, the job URL analyzer, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." } },
+              { "@type": "Question", "name": "Is there a monthly subscription?", "acceptedAnswer": { "@type": "Answer", "text": "No — Pro is a one-time $29 payment for lifetime access. Most candidates only need to prepare for a few weeks, so subscriptions feel like a rip-off." } },
+              { "@type": "Question", "name": "Do I need a microphone?", "acceptedAnswer": { "@type": "Answer", "text": "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." } },
+              { "@type": "Question", "name": "What does Video review mean? Is my data safe?", "acceptedAnswer": { "@type": "Answer", "text": "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers." } },
+              { "@type": "Question", "name": "What is the FAANG Stress Bootcamp?", "acceptedAnswer": { "@type": "Answer", "text": "Hard mode with Morgan, our toughest interviewer persona — a relentless VP who pushes back on every answer and demands specific metrics. Built to prep you for Big Tech bar-raisers and high-stakes panels." } },
+              { "@type": "Question", "name": "Will the questions match my actual job application?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Paste the job posting URL (Greenhouse, Lever, Workday, company career pages all work great) and the AI extracts the exact requirements and skills to generate targeted questions." } },
+              { "@type": "Question", "name": "Is it safe to pay? What happens after I pay?", "acceptedAnswer": { "@type": "Answer", "text": "Payment is processed securely by Stripe. After checkout you get instant lifetime access — just bookmark the app and use it anytime. No account needed." } },
+            ],
+          }) }}
+        />
       </Head>
       <style>{css}</style>
 
