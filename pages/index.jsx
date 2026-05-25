@@ -417,7 +417,7 @@ export default function Landing() {
 
       {/* ── NAV ── */}
       <nav>
-        <a href="#" className="nav-logo">InterviewHub</a>
+        <a href="/" className="nav-logo">InterviewHub</a>
         <div className="nav-actions">
           <button
             onClick={() => setLang(l => l === "en" ? "es" : "en")}

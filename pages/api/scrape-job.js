@@ -150,8 +150,11 @@ export default async function handler(req, res) {
 
   /* ── 4. GROQ EXTRACTION ── */
   try {
+    const groqController = new AbortController();
+    const groqTimer = setTimeout(() => groqController.abort(), 20000);
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
+      signal: groqController.signal,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
@@ -169,6 +172,7 @@ If the page is a login wall, an error page, or doesn't contain a real job postin
       }),
     });
 
+    clearTimeout(groqTimer);
     const groqData = await groqRes.json();
     const raw = groqData.choices?.[0]?.message?.content || "";
     const match = raw.match(/\{[\s\S]*\}/);
