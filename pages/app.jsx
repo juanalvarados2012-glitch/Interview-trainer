@@ -378,6 +378,7 @@ function useSTT() {
   const [supported, setSupported] = useState(false);
   const recRef = useRef(null);
   const cbRef = useRef(null);
+  const activeRef = useRef(false);
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     setSupported(!!SR);
@@ -388,21 +389,36 @@ function useSTT() {
     rec.interimResults = true;
     rec.onresult = (e) => {
       let final = "";
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+        else interim += e.results[i][0].transcript;
       }
-      if (final && cbRef.current) cbRef.current(final);
+      if (cbRef.current) cbRef.current(final, interim);
     };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
+    rec.onend = () => {
+      // Auto-restart when still supposed to be recording (browser stops on silence)
+      if (activeRef.current) {
+        try { rec.start(); } catch {}
+      } else {
+        setRecording(false);
+      }
+    };
+    rec.onerror = (e) => {
+      if (e.error === "no-speech") return; // silence — let onend handle the restart
+      activeRef.current = false;
+      setRecording(false);
+    };
     recRef.current = rec;
   }, []);
   const startRec = useCallback((onChunk, recLang = "en-US") => {
     cbRef.current = onChunk;
     if (recRef.current) recRef.current.lang = recLang;
+    activeRef.current = true;
     try { recRef.current?.start(); setRecording(true); } catch (e) { console.warn(e); }
   }, []);
   const stopRec = useCallback(() => {
+    activeRef.current = false;
     try { recRef.current?.stop(); } catch (e) { console.warn(e); }
     setRecording(false);
   }, []);
@@ -704,6 +720,7 @@ export default function App() {
   const [apiMessages, setApiMessages] = useState([]);
   const [displayMessages, setDisplayMessages] = useState([]);
   const [inputText, setInputText] = useState("");
+  const [interimText, setInterimText] = useState("");
   const [aiThinking, setAiThinking] = useState(false);
   const [interviewErr, setInterviewErr] = useState("");
   const [tips, setTips] = useState({});
@@ -867,6 +884,7 @@ Be specific to what they actually said — don't give generic advice. No bullet 
     if (!trimmed || aiThinking) return;
     unlock(); // prime synthesis context synchronously before async work
     stop(); stopRec();
+    setInterimText("");
 
     const userMsg = { role: "user", content: trimmed };
     const newApi = [...apiMessages, userMsg];
@@ -1003,9 +1021,14 @@ Respond ONLY with valid JSON, no extra text or markdown:
   const toggleMic = () => {
     if (recording) {
       stopRec();
+      setInterimText("");
     } else {
       setInputText("");
-      startRec(chunk => setInputText(prev => prev + chunk), lang === "es" ? "es-MX" : "en-US");
+      setInterimText("");
+      startRec((final, interim) => {
+        if (final) setInputText(prev => prev + final);
+        setInterimText(interim);
+      }, lang === "es" ? "es-MX" : "en-US");
     }
   };
 
@@ -1591,13 +1614,13 @@ DRILL RULES:
               )}
               <input
                 className="chat-input"
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(inputText)}
+                value={inputText + interimText}
+                onChange={e => { setInterimText(""); setInputText(e.target.value); }}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { setInterimText(""); sendMessage(inputText); } }}
                 placeholder={aiThinking ? t.aiTypingPlaceholder(DIFF_STATIC[difficulty].name.split(" ")[0]) : t.answerPlaceholder}
                 disabled={aiThinking}
               />
-              <button className="send-btn" onClick={() => sendMessage(inputText)} disabled={aiThinking || !inputText.trim()}>
+              <button className="send-btn" onClick={() => { setInterimText(""); sendMessage(inputText); }} disabled={aiThinking || !(inputText + interimText).trim()}>
                 ➤
               </button>
             </div>
