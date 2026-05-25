@@ -3,6 +3,19 @@ import { rateLimit, getClientIp } from "../../lib/rateLimit";
 
 export const config = { maxDuration: 30 };
 
+// Job boards known to block scrapers — fail fast with a helpful message
+const BLOCKED_HOSTS = [
+  "linkedin.com",
+  "indeed.com",
+  "glassdoor.com",
+  "glassdoor.es",
+  "monster.com",
+  "ziprecruiter.com",
+];
+
+const BLOCKED_MESSAGE =
+  "This job board blocks automatic reading. Open the posting, copy the full job description text, and paste it in the Job Description field below.";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -29,7 +42,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid URL" });
   }
 
-  const isLinkedIn = host.includes("linkedin.com");
+  // Block known job boards that don't allow scraping
+  if (BLOCKED_HOSTS.some((h) => host.includes(h))) {
+    return res.status(422).json({ error: BLOCKED_MESSAGE });
+  }
 
   /* ── 1. FETCH PAGE ── */
   let html;
@@ -52,21 +68,21 @@ export default async function handler(req, res) {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (!response.ok) throw new Error(`Site responded with ${response.status}`);
+    if (response.status === 401 || response.status === 403) {
+      return res.status(422).json({ error: BLOCKED_MESSAGE });
+    }
+    if (!response.ok) {
+      return res.status(422).json({ error: `Site responded with ${response.status}. Try pasting the job description manually below.` });
+    }
     html = await response.text();
   } catch (e) {
     if (e.name === "AbortError") {
       return res.status(422).json({ error: "Site took too long to respond. Paste the job description manually below." });
     }
-    if (isLinkedIn) {
-      return res.status(422).json({
-        error: "LinkedIn blocks our scraper. Open the job in LinkedIn, copy the description text, and paste it in the Job Description field below.",
-      });
-    }
-    return res.status(422).json({ error: `Couldn't reach the link: ${e.message}` });
+    return res.status(422).json({ error: "Couldn't reach that link. Paste the job description manually below." });
   }
 
-  /* ── 2. EXTRACT WHAT WE CAN ── */
+  /* ── 2. EXTRACT STRUCTURED DATA ── */
   const grabMeta = (re) => html.match(re)?.[1]?.trim() || null;
   const metaTitle =
     grabMeta(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
@@ -75,7 +91,7 @@ export default async function handler(req, res) {
     grabMeta(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
     grabMeta(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
 
-  // JSON-LD JobPosting (Indeed, Greenhouse, Lever, Workday, most company career pages)
+  // JSON-LD JobPosting (Greenhouse, Lever, Workday, most company career pages)
   let structured = null;
   const jsonLdBlocks = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   for (const block of jsonLdBlocks) {
@@ -95,16 +111,7 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  // LinkedIn fallback: parse "Company hiring Role in Location" from og:title
-  // — used only if the AI fails to produce a real description below.
-  const linkedInFallback = (() => {
-    if (!isLinkedIn) return null;
-    const m = metaTitle?.match(/^(.+?)\s+hiring\s+(.+?)(?:\s+in\s+.+)?$/i);
-    if (!m) return null;
-    return { company: m[1].trim(), role: m[2].trim() };
-  })();
-
-  /* ── 4. BUILD AI INPUT ── */
+  /* ── 3. BUILD AI INPUT ── */
   let aiInput;
   if (structured?.description && structured.description.length > 200) {
     aiInput =
@@ -134,14 +141,14 @@ export default async function handler(req, res) {
       (metaDesc ? `META DESCRIPTION: ${metaDesc}\n\n` : "") +
       `PAGE TEXT:\n${pageText.slice(startIdx, startIdx + 9000)}`;
 
-    if (pageText.length < 500 && !linkedInFallback) {
+    if (pageText.length < 500) {
       return res.status(422).json({
         error: "Couldn't read enough content from this page. Paste the job description manually in the field below.",
       });
     }
   }
 
-  /* ── 5. GROQ EXTRACTION ── */
+  /* ── 4. GROQ EXTRACTION ── */
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -155,7 +162,7 @@ export default async function handler(req, res) {
             content: `You are a job posting extractor. Read the provided text and extract the job listing details.
 Respond ONLY with valid JSON, no extra text or markdown:
 {"role":"exact job title","company":"company name","description":"detailed description with responsibilities, requirements, and skills sought in 4-7 sentences"}
-If the page is a login wall or doesn't contain a real job posting, respond: {"error":"short description of the problem"}`,
+If the page is a login wall, an error page, or doesn't contain a real job posting, respond: {"error":"short description of the problem"}`,
           },
           { role: "user", content: aiInput },
         ],
@@ -170,16 +177,6 @@ If the page is a login wall or doesn't contain a real job posting, respond: {"er
     const result = JSON.parse(match[0]);
 
     if (result.error) {
-      // AI couldn't extract — for LinkedIn we still try to return what we parsed
-      if (linkedInFallback) {
-        return res.status(200).json({
-          role: linkedInFallback.role,
-          company: linkedInFallback.company,
-          description: "",
-          partial: true,
-          note: "LinkedIn didn't return the full posting. We pre-filled what we could — please paste the job description text in the field below.",
-        });
-      }
       return res.status(422).json({
         error: result.error + " — paste the job description manually in the field below.",
       });
@@ -188,27 +185,8 @@ If the page is a login wall or doesn't contain a real job posting, respond: {"er
     if (structured?.role && (!result.role || result.role.length < 3)) result.role = structured.role;
     if (structured?.company && (!result.company || result.company.length < 2)) result.company = structured.company;
 
-    // Thin description on LinkedIn → keep what we have but warn the user
-    if (isLinkedIn && (!result.description || result.description.length < 200)) {
-      if (linkedInFallback) {
-        result.role = result.role || linkedInFallback.role;
-        result.company = result.company || linkedInFallback.company;
-      }
-      result.partial = true;
-      result.note = "LinkedIn only gave us a snippet. Pre-filled what we could — paste the full job description below for a better interview.";
-    }
-
     return res.status(200).json(result);
   } catch (e) {
-    if (linkedInFallback) {
-      return res.status(200).json({
-        role: linkedInFallback.role,
-        company: linkedInFallback.company,
-        description: "",
-        partial: true,
-        note: "LinkedIn didn't return the full posting. We pre-filled what we could — please paste the job description text in the field below.",
-      });
-    }
     return res.status(500).json({ error: "Error extracting job posting: " + e.message });
   }
 }
