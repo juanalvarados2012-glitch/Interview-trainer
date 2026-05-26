@@ -645,8 +645,10 @@ export default function Landing() {
           <a href="#pricing" className="footer-link">{L.footerPricing}</a>
           <a href="#features" className="footer-link">{L.footerFeatures}</a>
           <Link href="/privacy" className="footer-link">{lang === "es" ? "Privacidad" : "Privacy"}</Link>
-          <a href="mailto:juanalvarado2012@gmail.com" className="footer-link">Contact</a>
         </div>
+        <a href="mailto:juanalvarados2012@gmail.com" style={{ fontFamily: "'DM Mono',monospace", fontSize: ".85rem", color: "#9090ff", fontWeight: 700, textDecoration: "none", border: "1px solid #2a2a60", borderRadius: 8, padding: "8px 16px", transition: "all .2s" }}>
+          {lang === "es" ? "¿Problemas con tu pago? Contáctanos →" : "Payment issues? Contact us →"}
+        </a>
         <span className="footer-copy">© {new Date().getFullYear()} InterviewHub</span>
       </footer>
     </>
