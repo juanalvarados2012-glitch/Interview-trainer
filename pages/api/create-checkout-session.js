@@ -7,7 +7,9 @@ export default async function handler(req, res) {
   if (!stripeKey) return res.status(500).json({ error: "Stripe not configured" });
 
   const stripe = new Stripe(stripeKey);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
   const amount = parseInt(process.env.STRIPE_PRICE_AMOUNT || "2900", 10); // $29.00
 
   let userId = null;

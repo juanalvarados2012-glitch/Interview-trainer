@@ -240,7 +240,7 @@ const LANDING_STRINGS = {
     faqTag: "// FAQ",
     faqH2: "Common questions",
     faqs: [
-      { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, job URL analyzer, and real-time coach tips. Pro unlocks unlimited interviews, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." },
+      { q: "What's the difference between Free and Pro?", a: "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, and real-time coach tips. Pro unlocks unlimited interviews, the job URL analyzer, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." },
       { q: "Is there a monthly subscription?", a: "No — Pro is a one-time $29 payment for lifetime access. Most candidates only need to prepare for a few weeks, so subscriptions feel like a rip-off." },
       { q: "Do I need a microphone?", a: "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." },
       { q: "What does \"Video review\" mean? Is my data safe?", a: "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers. You can play it back, see your WPM, filler words, and download it if you want to keep it." },
@@ -332,7 +332,7 @@ const LANDING_STRINGS = {
     faqTag: "// Preguntas frecuentes",
     faqH2: "Preguntas comunes",
     faqs: [
-      { q: "¿Cuál es la diferencia entre Gratis y Pro?", a: "Gratis te da 6 entrevistas/mes con Jordan en dificultad Estándar, voz, analizador de URL y consejos del coach en tiempo real. Pro desbloquea entrevistas ilimitadas, los personajes Sam (fácil) y Morgan (Big Tech Bootcamp), memoria del coach con ejercicios focalizados, revisión de video con análisis de ritmo y muletillas, e historial completo." },
+      { q: "¿Cuál es la diferencia entre Gratis y Pro?", a: "Gratis te da 6 entrevistas/mes con Jordan en dificultad Estándar, voz y consejos del coach en tiempo real. Pro desbloquea entrevistas ilimitadas, el analizador de URL de vacantes, los personajes Sam (fácil) y Morgan (Big Tech Bootcamp), memoria del coach con ejercicios focalizados, revisión de video con análisis de ritmo y muletillas, e historial completo." },
       { q: "¿Hay suscripción mensual?", a: "No — Pro es un pago único de $29 para acceso de por vida. La mayoría de los candidatos solo necesitan prepararse unas semanas, así que las suscripciones se sienten como una estafa." },
       { q: "¿Necesito micrófono?", a: "No — puedes escribir tus respuestas si lo prefieres. Pero usar el micrófono da la experiencia más realista, con el entrevistador de IA respondiéndote en voz alta." },
       { q: "¿Qué es la \"Revisión de video\"? ¿Están seguros mis datos?", a: "En Pro, puedes optar por grabarte durante la entrevista. El video se guarda solo en tu navegador — nunca se sube a nuestros servidores. Puedes reproducirlo, ver tu WPM, muletillas y descargarlo si quieres conservarlo." },
@@ -355,6 +355,9 @@ export default function Landing() {
   const L = LANDING_STRINGS[lang];
   const { user } = CLERK_ENABLED ? useUser() : { user: null };
 
+  const siteUrl =
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_URL) || "";
+
   const title = lang === "es"
     ? "InterviewHub — Practica entrevistas de trabajo con un entrevistador de IA real"
     : "InterviewHub — Practice job interviews with a real AI interviewer";
@@ -376,12 +379,45 @@ export default function Landing() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        {siteUrl && <link rel="canonical" href={siteUrl} />}
+        {siteUrl && <meta property="og:url" content={siteUrl} />}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "InterviewHub",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web Browser",
+            "description": "AI-powered mock interview practice with voice, real-time coaching, and job-specific questions tailored to any job posting. Free to start, $29 lifetime Pro.",
+            "offers": [
+              { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free — 6 interviews/month" },
+              { "@type": "Offer", "price": "29", "priceCurrency": "USD", "name": "Pro — lifetime access" },
+            ],
+          }) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              { "@type": "Question", "name": "What's the difference between Free and Pro?", "acceptedAnswer": { "@type": "Answer", "text": "Free gives you 6 interviews/month with Jordan at Standard difficulty, voice, and real-time coach tips. Pro unlocks unlimited interviews, the job URL analyzer, Sam (easy) and Morgan (FAANG bootcamp) personas, coach memory with weak-spot drills, video review with pace & filler analysis, and full history tracking." } },
+              { "@type": "Question", "name": "Is there a monthly subscription?", "acceptedAnswer": { "@type": "Answer", "text": "No — Pro is a one-time $29 payment for lifetime access. Most candidates only need to prepare for a few weeks, so subscriptions feel like a rip-off." } },
+              { "@type": "Question", "name": "Do I need a microphone?", "acceptedAnswer": { "@type": "Answer", "text": "No — you can type your answers if you prefer. But using your microphone gives the most realistic experience, with the AI interviewer speaking back to you." } },
+              { "@type": "Question", "name": "What does Video review mean? Is my data safe?", "acceptedAnswer": { "@type": "Answer", "text": "On Pro, you can opt in to record yourself during the interview. The video is stored only in your browser — never uploaded to our servers." } },
+              { "@type": "Question", "name": "What is the FAANG Stress Bootcamp?", "acceptedAnswer": { "@type": "Answer", "text": "Hard mode with Morgan, our toughest interviewer persona — a relentless VP who pushes back on every answer and demands specific metrics. Built to prep you for Big Tech bar-raisers and high-stakes panels." } },
+              { "@type": "Question", "name": "Will the questions match my actual job application?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Paste the job posting URL (Greenhouse, Lever, Workday, company career pages all work great) and the AI extracts the exact requirements and skills to generate targeted questions." } },
+              { "@type": "Question", "name": "Is it safe to pay? What happens after I pay?", "acceptedAnswer": { "@type": "Answer", "text": "Payment is processed securely by Stripe. After checkout you get instant lifetime access — just bookmark the app and use it anytime. No account needed." } },
+            ],
+          }) }}
+        />
       </Head>
       <style>{css}</style>
 
       {/* ── NAV ── */}
       <nav>
-        <a href="#" className="nav-logo">InterviewHub</a>
+        <a href="/" className="nav-logo">InterviewHub</a>
         <div className="nav-actions">
           <button
             onClick={() => setLang(l => l === "en" ? "es" : "en")}
@@ -609,8 +645,10 @@ export default function Landing() {
           <a href="#pricing" className="footer-link">{L.footerPricing}</a>
           <a href="#features" className="footer-link">{L.footerFeatures}</a>
           <Link href="/privacy" className="footer-link">{lang === "es" ? "Privacidad" : "Privacy"}</Link>
-          <a href="mailto:juanalvarado2012@gmail.com" className="footer-link">Contact</a>
         </div>
+        <a href="mailto:juanalvarados2012@gmail.com" style={{ fontFamily: "'DM Mono',monospace", fontSize: ".85rem", color: "#9090ff", fontWeight: 700, textDecoration: "none", border: "1px solid #2a2a60", borderRadius: 8, padding: "8px 16px", transition: "all .2s" }}>
+          {lang === "es" ? "¿Problemas con tu pago? Contáctanos →" : "Payment issues? Contact us →"}
+        </a>
         <span className="footer-copy">© {new Date().getFullYear()} InterviewHub</span>
       </footer>
     </>
